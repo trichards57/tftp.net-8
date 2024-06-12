@@ -56,7 +56,7 @@ public class TftpClient
     /// <returns>The read transfer.</returns>
     public ITftpTransfer Download(string filename)
     {
-        ITransferChannel channel = TransferChannelFactory.CreateConnection(remoteAddress);
+        ITransferChannel channel = new UdpChannel(new UdpClient(new IPEndPoint(IPAddress.Any, 0))) { RemoteEndpoint = remoteAddress };
         return new RemoteReadTransfer(channel, filename);
     }
 
@@ -68,7 +68,7 @@ public class TftpClient
     /// <returns>The write transfer.</returns>
     public ITftpTransfer Upload(string filename)
     {
-        ITransferChannel channel = TransferChannelFactory.CreateConnection(remoteAddress);
+        ITransferChannel channel = new UdpChannel(new UdpClient(new IPEndPoint(IPAddress.Any, 0))) { RemoteEndpoint = remoteAddress };
         return new RemoteWriteTransfer(channel, filename);
     }
 }

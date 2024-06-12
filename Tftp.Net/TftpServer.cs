@@ -4,6 +4,7 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using Tftp.Net.Channel;
 using Tftp.Net.Transfer;
 
@@ -39,7 +40,7 @@ public sealed class TftpServer : IDisposable
     {
         ArgumentNullException.ThrowIfNull(localEndpoint);
 
-        serverSocket = TransferChannelFactory.CreateServer(localEndpoint);
+        serverSocket = new UdpChannel(new UdpClient(localEndpoint));
         serverSocket.OnCommandReceived += new TftpCommandHandler(ServerSocket_OnCommandReceived);
         serverSocket.OnError += new TftpChannelErrorHandler(ServerSocket_OnError);
     }
@@ -112,7 +113,7 @@ public sealed class TftpServer : IDisposable
         }
     }
 
-    private void ServerSocket_OnCommandReceived(ITftpCommand command, EndPoint endpoint)
+    private void ServerSocket_OnCommandReceived(ITftpCommand command, IPEndPoint endpoint)
     {
         // Ignore all other commands
         if (command is not ReadOrWriteRequest request)
@@ -121,7 +122,7 @@ public sealed class TftpServer : IDisposable
         }
 
         // Open a connection to the client
-        ITransferChannel channel = TransferChannelFactory.CreateConnection(endpoint);
+        ITransferChannel channel = new UdpChannel(new UdpClient(new IPEndPoint(IPAddress.Any, 0))) { RemoteEndpoint = endpoint };
 
         if (command is ReadRequest)
         {
