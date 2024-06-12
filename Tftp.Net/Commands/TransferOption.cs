@@ -43,12 +43,6 @@ public readonly record struct TransferOption
     public string Value { get; init; }
 
     /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(IsAcknowledged, Name, Value);
-    }
-
-    /// <inheritdoc/>
     public override string ToString()
     {
         return Name + "=" + Value;
