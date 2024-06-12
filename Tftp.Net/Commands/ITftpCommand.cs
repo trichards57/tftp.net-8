@@ -10,7 +10,7 @@ namespace Tftp.Net;
 internal interface ITftpCommand
 {
     /// <summary>
-    /// Called to raise hte appropriate event on the visitor.
+    /// Called to raise the appropriate event on the visitor.
     /// </summary>
     /// <param name="visitor">The command visitor.</param>
     void Visit(ITftpCommandVisitor visitor);
