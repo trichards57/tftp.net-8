@@ -35,21 +35,21 @@ internal static class CommandParser
 
     private static Acknowledgement ParseAcknowledgement(TftpStreamReader reader)
     {
-        ushort blockNumber = reader.ReadUInt16();
+        var blockNumber = reader.ReadUInt16();
         return new Acknowledgement(blockNumber);
     }
 
     private static Data ParseData(TftpStreamReader reader)
     {
-        ushort blockNumber = reader.ReadUInt16();
-        byte[] data = reader.ReadBytes(10000);
+        var blockNumber = reader.ReadUInt16();
+        var data = reader.ReadBytes(10000);
         return new Data(blockNumber, data);
     }
 
     private static Error ParseError(TftpStreamReader reader)
     {
-        ushort errorCode = reader.ReadUInt16();
-        string message = ParseNullTerminatedString(reader);
+        var errorCode = reader.ReadUInt16();
+        var message = ParseNullTerminatedString(reader);
         return new Error(errorCode, message);
     }
 
@@ -57,7 +57,7 @@ internal static class CommandParser
     {
         var reader = new TftpStreamReader(new MemoryStream(message));
 
-        ushort opcode = reader.ReadUInt16();
+        var opcode = reader.ReadUInt16();
         return opcode switch
         {
             ReadRequest.OpCode => ParseReadRequest(reader),
@@ -72,9 +72,7 @@ internal static class CommandParser
 
     private static TftpTransferMode ParseModeType(string mode)
     {
-        mode = mode.ToLowerInvariant();
-
-        return mode switch
+        return mode.ToLowerInvariant() switch
         {
             "netascii" => TftpTransferMode.netascii,
             "mail" => TftpTransferMode.mail,
@@ -97,15 +95,15 @@ internal static class CommandParser
 
     private static OptionAcknowledgement ParseOptionAcknowledgement(TftpStreamReader reader)
     {
-        IEnumerable<TransferOption> options = ParseTransferOptions(reader);
+        var options = ParseTransferOptions(reader);
         return new OptionAcknowledgement(options);
     }
 
     private static ReadRequest ParseReadRequest(TftpStreamReader reader)
     {
-        string filename = ParseNullTerminatedString(reader);
-        TftpTransferMode mode = ParseModeType(ParseNullTerminatedString(reader));
-        IEnumerable<TransferOption> options = ParseTransferOptions(reader);
+        var filename = ParseNullTerminatedString(reader);
+        var mode = ParseModeType(ParseNullTerminatedString(reader));
+        var options = ParseTransferOptions(reader);
         return new ReadRequest(filename, mode, options);
     }
 
@@ -131,7 +129,7 @@ internal static class CommandParser
                 break;
             }
 
-            string value = ParseNullTerminatedString(reader);
+            var value = ParseNullTerminatedString(reader);
             options.Add(new TransferOption(name, value));
         }
 
@@ -140,9 +138,9 @@ internal static class CommandParser
 
     private static WriteRequest ParseWriteRequest(TftpStreamReader reader)
     {
-        string filename = ParseNullTerminatedString(reader);
-        TftpTransferMode mode = ParseModeType(ParseNullTerminatedString(reader));
-        IEnumerable<TransferOption> options = ParseTransferOptions(reader);
+        var filename = ParseNullTerminatedString(reader);
+        var mode = ParseModeType(ParseNullTerminatedString(reader));
+        var options = ParseTransferOptions(reader);
         return new WriteRequest(filename, mode, options);
     }
 }
