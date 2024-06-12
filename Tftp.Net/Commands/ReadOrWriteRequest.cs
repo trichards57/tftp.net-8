@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Tftp.Net.Commands;
@@ -15,7 +16,7 @@ internal abstract class ReadOrWriteRequest(ushort opCode, string filename, TftpT
 
     public TftpTransferMode Mode { get; private set; } = mode;
 
-    public IEnumerable<TransferOption> Options { get; private set; } = options;
+    public IEnumerable<TransferOption> Options { get; private set; } = options ?? [];
 
     public void WriteToStream(TftpStreamWriter writer)
     {

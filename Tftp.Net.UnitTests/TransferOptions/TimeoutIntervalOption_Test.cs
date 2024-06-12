@@ -2,85 +2,68 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using NUnit.Framework;
+using FluentAssertions;
 using Tftp.Net.Commands;
 using Tftp.Net.Transfer;
+using Xunit;
 
 namespace Tftp.Net.UnitTests.TransferOptions;
 
-[TestFixture]
-internal class TimeoutIntervalOption_Test
+public class TimeoutIntervalOption_Test
 {
     private TransferOptionSet options;
 
-    [Test]
+    [Fact]
     public void AcceptsValidTimeout()
     {
-        Parse(new TransferOption("timeout", "10"));
-        Assert.Multiple(() =>
-        {
-            Assert.That(options.IncludesTimeoutOption, Is.True);
-            Assert.That(options.Timeout, Is.EqualTo(10));
-        });
+        options = new TransferOptionSet([new TransferOption("timeout", "10")]);
+
+        options.IncludesTimeoutOption.Should().BeTrue();
+        options.Timeout.Should().Be(10);
     }
 
-    [Test]
+    [Fact]
     public void AcceptsMinTimeout()
     {
-        Parse(new TransferOption("timeout", "1"));
-        Assert.Multiple(() =>
-        {
-            Assert.That(options.IncludesTimeoutOption, Is.True);
-            Assert.That(options.Timeout, Is.EqualTo(1));
-        });
+        options = new TransferOptionSet([new TransferOption("timeout", "1")]);
+
+        options.IncludesTimeoutOption.Should().BeTrue();
+        options.Timeout.Should().Be(1);
     }
 
-    [Test]
+    [Fact]
     public void AcceptsMaxTimeout()
     {
-        Parse(new TransferOption("timeout", "255"));
-        Assert.Multiple(() =>
-        {
-            Assert.That(options.IncludesTimeoutOption, Is.True);
-            Assert.That(options.Timeout, Is.EqualTo(255));
-        });
+        options = new TransferOptionSet([new TransferOption("timeout", "255")]);
+
+        options.IncludesTimeoutOption.Should().BeTrue();
+        options.Timeout.Should().Be(255);
     }
 
-    [Test]
+    [Fact]
     public void RejectsTimeoutTooLow()
     {
-        Parse(new TransferOption("timeout", "0"));
-        Assert.Multiple(() =>
-        {
-            Assert.That(options.IncludesTimeoutOption, Is.False);
-            Assert.That(options.Timeout, Is.EqualTo(5));
-        });
+        options = new TransferOptionSet([new TransferOption("timeout", "0")]);
+
+        options.IncludesTimeoutOption.Should().BeFalse();
+        options.Timeout.Should().Be(5);
     }
 
-    [Test]
+    [Fact]
     public void RejectsTimeoutTooHigh()
     {
-        Parse(new TransferOption("timeout", "256"));
-        Assert.Multiple(() =>
-        {
-            Assert.That(options.IncludesTimeoutOption, Is.False);
-            Assert.That(options.Timeout, Is.EqualTo(5));
-        });
+        options = new TransferOptionSet([new TransferOption("timeout", "256")]);
+
+        options.IncludesTimeoutOption.Should().BeFalse();
+        options.Timeout.Should().Be(5);
     }
 
-    [Test]
+    [Fact]
     public void RejectsNonIntegerTimeout()
     {
-        Parse(new TransferOption("timeout", "blub"));
-        Assert.Multiple(() =>
-        {
-            Assert.That(options.IncludesTimeoutOption, Is.False);
-            Assert.That(options.Timeout, Is.EqualTo(5));
-        });
-    }
+        options = new TransferOptionSet([new TransferOption("timeout", "blub")]);
 
-    private void Parse(TransferOption option)
-    {
-        options = new TransferOptionSet(new TransferOption[] { option });
+        options.IncludesTimeoutOption.Should().BeFalse();
+        options.Timeout.Should().Be(5);
     }
 }

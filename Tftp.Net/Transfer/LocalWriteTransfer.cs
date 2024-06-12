@@ -5,6 +5,7 @@
 using System;
 using System.IO;
 using Tftp.Net.Channel;
+using Tftp.Net.Commands;
 
 namespace Tftp.Net.Transfer;
 

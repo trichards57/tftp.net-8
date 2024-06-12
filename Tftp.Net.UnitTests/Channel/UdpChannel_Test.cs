@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Tftp.Net.Channel;
+using Tftp.Net.Commands;
 using Xunit;
 
 namespace Tftp.Net.UnitTests;

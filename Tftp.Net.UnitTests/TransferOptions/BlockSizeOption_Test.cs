@@ -2,68 +2,59 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using NUnit.Framework;
+using FluentAssertions;
 using Tftp.Net.Commands;
 using Tftp.Net.Transfer;
+using Xunit;
 
 namespace Tftp.Net.UnitTests.TransferOptions;
 
-[TestFixture]
-internal class BlockSizeOption_Test
+public class BlockSizeOption_Test
 {
     private TransferOptionSet options;
 
-    [Test]
+    [Fact]
     public void AcceptsMaxBlocksize()
     {
         Parse(new TransferOption("blksize", "65464"));
-        Assert.That(options.IncludesBlockSizeOption, Is.True);
+        options.IncludesBlockSizeOption.Should().BeTrue();
 
         Parse(new TransferOption("blksize", "65465"));
-        Assert.That(options.IncludesBlockSizeOption, Is.False);
+        options.IncludesBlockSizeOption.Should().BeFalse();
     }
 
-    [Test]
+    [Fact]
     public void AcceptsMinBlocksize()
     {
         Parse(new TransferOption("blksize", "8"));
-        Assert.That(options.IncludesBlockSizeOption, Is.True);
+        options.IncludesBlockSizeOption.Should().BeTrue();
 
         Parse(new TransferOption("blksize", "7"));
-        Assert.That(options.IncludesBlockSizeOption, Is.False);
+        options.IncludesBlockSizeOption.Should().BeFalse();
     }
 
-    [Test]
+    [Fact]
     public void AcceptsRegularOption()
     {
         Parse(new TransferOption("blksize", "16"));
-        Assert.Multiple(() =>
-        {
-            Assert.That(options.IncludesBlockSizeOption, Is.True);
-            Assert.That(options.BlockSize, Is.EqualTo(16));
-        });
+        options.IncludesBlockSizeOption.Should().BeTrue();
+        options.BlockSize.Should().Be(16);
     }
 
-    [Test]
+    [Fact]
     public void IgnoresInvalidValue()
     {
         Parse(new TransferOption("blksize", "not-a-number"));
-        Assert.Multiple(() =>
-        {
-            Assert.That(options.BlockSize, Is.EqualTo(512));
-            Assert.That(options.IncludesBlockSizeOption, Is.False);
-        });
+        options.IncludesBlockSizeOption.Should().BeFalse();
+        options.BlockSize.Should().Be(512);
     }
 
-    [Test]
+    [Fact]
     public void IgnoresUnknownOption()
     {
         Parse(new TransferOption("blub", "16"));
-        Assert.Multiple(() =>
-        {
-            Assert.That(options.BlockSize, Is.EqualTo(512));
-            Assert.That(options.IncludesBlockSizeOption, Is.False);
-        });
+        options.IncludesBlockSizeOption.Should().BeFalse();
+        options.BlockSize.Should().Be(512);
     }
 
     private void Parse(TransferOption option)

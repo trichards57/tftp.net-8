@@ -3,6 +3,7 @@
 // </copyright>
 
 using FluentAssertions;
+using Tftp.Net.Commands;
 using Xunit;
 
 namespace Tftp.Net.UnitTests;

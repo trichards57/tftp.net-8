@@ -2,46 +2,53 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using NUnit.Framework;
+using FluentAssertions;
+using System;
+using Tftp.Net.Commands;
+using Xunit;
 
 namespace Tftp.Net.UnitTests.TransferOptions;
 
-[TestFixture]
-internal class TransferOption_Test
+public class TransferOption_Test
 {
-    [Test]
+    [Fact]
     public void AcceptsEmptyValue()
     {
-        Assert.That(() => new TransferOption("Test", string.Empty), Throws.Nothing);
+        var func = () => new TransferOption("Test", string.Empty);
+
+        func.Should().NotThrow();
     }
 
-    [Test]
+    [Fact]
     public void CanBeCreatedWithValidNameAndValue()
     {
         var option = new TransferOption("Test", "Hallo Welt");
-        Assert.Multiple(() =>
-        {
-            Assert.That(option.Name, Is.EqualTo("Test"));
-            Assert.That(option.Value, Is.EqualTo("Hallo Welt"));
-            Assert.That(option.IsAcknowledged, Is.False);
-        });
+        option.Name.Should().Be("Test");
+        option.Value.Should().Be("Hallo Welt");
+        option.IsAcknowledged.Should().BeFalse();
     }
 
-    [Test]
+    [Fact]
     public void RejectsInvalidName1()
     {
-        Assert.That(() => new TransferOption(string.Empty, "Hallo Welt"), Throws.ArgumentException);
+        var func = () => new TransferOption(string.Empty, "Hallo Welt");
+
+        func.Should().Throw<ArgumentException>();
     }
 
-    [Test]
+    [Fact]
     public void RejectsInvalidName2()
     {
-        Assert.That(() => new TransferOption(null, "Hallo Welt"), Throws.ArgumentNullException);
+        var func = () => new TransferOption(null, "Hallo Welt");
+
+        func.Should().Throw<ArgumentNullException>();
     }
 
-    [Test]
+    [Fact]
     public void RejectsInvalidValue()
     {
-        Assert.That(() => new TransferOption("Test", null), Throws.ArgumentNullException);
+        var func = () => new TransferOption("Test", null);
+
+        func.Should().Throw<ArgumentNullException>();
     }
 }
