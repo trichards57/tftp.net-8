@@ -2,30 +2,39 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
+using Tftp.Net.Trace;
+
 namespace Tftp.Net.Transfer.States;
 
-internal class AcknowledgeWriteRequest : StateThatExpectsMessagesFromDefaultEndPoint
+internal class AcknowledgeWriteRequest(ILogger logger) : StateThatExpectsMessagesFromDefaultEndPoint(logger)
 {
+    private readonly ILogger logger = logger;
+
     public override void OnCancel(TftpErrorPacket reason)
     {
-        Context.SetState(new CancelledByUser(reason));
+        logger.StateCancelled(nameof(AcknowledgeWriteRequest), reason.ErrorCode, reason.ErrorMessage);
+        Context.SetState(new CancelledByUser(reason, logger));
     }
 
     public override void OnData(Data command)
     {
-        var nextState = new Receiving();
+        logger.StateDataReceived(nameof(AcknowledgeWriteRequest));
+        var nextState = new Receiving(logger);
         Context.SetState(nextState);
         nextState.OnCommand(command, Context.GetConnection().RemoteEndpoint);
     }
 
     public override void OnError(Error command)
     {
-        Context.SetState(new ReceivedError(command));
+        logger.StateError(nameof(AcknowledgeWriteRequest), command.ErrorCode, command.Message);
+        Context.SetState(new ReceivedError(command, logger));
     }
 
     public override void OnStateEnter()
     {
+        logger.StateEntered(nameof(AcknowledgeWriteRequest));
         base.OnStateEnter();
-        SendAndRepeat(new Acknowledgement(0));
+        SendAndRepeat(new Acknowledgement { BlockNumber = 0 });
     }
 }

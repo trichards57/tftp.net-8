@@ -1,4 +1,4 @@
-﻿// <copyright file="TransferOption.cs" company="Tony Richards">
+﻿// <copyright file="TransferOptionParser.cs" company="Tony Richards">
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Tftp.Net.Transfer.States;
 
@@ -22,7 +23,7 @@ internal class CancelledByUserState_Test
     public void Setup()
     {
         transfer = new TransferStub();
-        transfer.SetState(new CancelledByUser(TftpErrorPacket.IllegalOperation));
+        transfer.SetState(new CancelledByUser(TftpErrorPacket.IllegalOperation, NullLogger.Instance));
     }
 
     [TearDown]

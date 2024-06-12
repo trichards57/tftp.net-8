@@ -2,24 +2,26 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
 using Tftp.Net.Trace;
 
 namespace Tftp.Net.Transfer.States;
 
-internal class ReceivedError(ITftpTransferError error) : BaseState
+internal class ReceivedError(ITftpTransferError error, ILogger logger) : BaseState
 {
+    private readonly ILogger logger = logger;
     private readonly ITftpTransferError error = error;
 
-    public ReceivedError(Error error)
-        : this(new TftpErrorPacket(error.ErrorCode, GetNonEmptyErrorMessage(error)))
+    public ReceivedError(Error error, ILogger logger)
+        : this(new TftpErrorPacket(error.ErrorCode, GetNonEmptyErrorMessage(error)), logger)
     {
     }
 
     public override void OnStateEnter()
     {
-        TftpTrace.Trace("Received error: " + error, Context);
+        logger.StateError(nameof(ReceivedError), 0, error.ToString());
         Context.RaiseOnError(error);
-        Context.SetState(new Closed());
+        Context.SetState(new Closed(logger));
     }
 
     private static string GetNonEmptyErrorMessage(Error error)

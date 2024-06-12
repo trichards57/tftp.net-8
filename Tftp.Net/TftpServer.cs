@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -32,13 +34,17 @@ public sealed class TftpServer : IDisposable
     /// </summary>
     private readonly ITransferChannel serverSocket;
 
+    private readonly ILogger logger;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TftpServer"/> class.
     /// </summary>
     /// <param name="localEndpoint">The local endpoint to bind to.</param>
-    public TftpServer(IPEndPoint localEndpoint)
+    public TftpServer(IPEndPoint localEndpoint, ILogger logger = null)
     {
         ArgumentNullException.ThrowIfNull(localEndpoint);
+
+        this.logger = logger ?? NullLogger.Instance;
 
         serverSocket = new UdpChannel(new UdpClient(localEndpoint));
         serverSocket.OnCommandReceived += new TftpCommandHandler(ServerSocket_OnCommandReceived);
@@ -50,8 +56,8 @@ public sealed class TftpServer : IDisposable
     /// </summary>
     /// <param name="localAddress">The local address to bind to.</param>
     /// <param name="port">The UDP port to listen to.</param>
-    public TftpServer(IPAddress localAddress, int port = DefaultServerPort)
-            : this(new IPEndPoint(localAddress, port))
+    public TftpServer(IPAddress localAddress, int port = DefaultServerPort, ILogger logger = null)
+            : this(new IPEndPoint(localAddress, port), logger)
     {
     }
 
@@ -59,8 +65,8 @@ public sealed class TftpServer : IDisposable
     /// Initializes a new instance of the <see cref="TftpServer"/> class.
     /// </summary>
     /// <param name="port">The UDP port to listen to.</param>
-    public TftpServer(int port = DefaultServerPort)
-            : this(new IPEndPoint(IPAddress.Any, port))
+    public TftpServer(int port = DefaultServerPort, ILogger logger = null)
+            : this(new IPEndPoint(IPAddress.Any, port), logger)
     {
     }
 
@@ -126,11 +132,11 @@ public sealed class TftpServer : IDisposable
 
         if (command is ReadRequest)
         {
-            RaiseOnReadRequest(new LocalReadTransfer(channel, request.Filename, request.Options), endpoint);
+            RaiseOnReadRequest(new LocalReadTransfer(channel, request.Filename, request.Options, logger), endpoint);
         }
         else if (command is WriteRequest)
         {
-            RaiseOnWriteRequest(new LocalWriteTransfer(channel, request.Filename, request.Options), endpoint);
+            RaiseOnWriteRequest(new LocalWriteTransfer(channel, request.Filename, request.Options, logger), endpoint);
         }
         else
         {

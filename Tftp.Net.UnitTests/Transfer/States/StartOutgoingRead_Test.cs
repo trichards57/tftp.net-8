@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using System.IO;
 using Tftp.Net.Transfer.States;
@@ -23,7 +24,7 @@ internal class StartOutgoingRead_Test
     public void Setup()
     {
         transfer = new TransferStub();
-        transfer.SetState(new StartOutgoingRead());
+        transfer.SetState(new StartOutgoingRead(NullLogger.Instance));
     }
 
     [Test]
@@ -36,7 +37,7 @@ internal class StartOutgoingRead_Test
     [Test]
     public void IgnoresCommands()
     {
-        transfer.OnCommand(new Error(5, "Hallo Welt"));
+        transfer.OnCommand(new Error { ErrorCode = 5, Message = "Hallo Welt" });
         Assert.That(transfer.State, Is.InstanceOf<StartOutgoingRead>());
     }
 

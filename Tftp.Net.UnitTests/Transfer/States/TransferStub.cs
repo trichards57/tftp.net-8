@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +14,7 @@ namespace Tftp.Net.UnitTests;
 internal sealed class TransferStub : TftpTransfer
 {
     public TransferStub(MemoryStream stream)
-        : base(new ChannelStub(), "dummy.txt", new Uninitialized())
+        : base(new ChannelStub(), "dummy.txt", new Uninitialized(), NullLogger.Instance)
     {
         InputOutputStream = stream;
         HadNetworkTimeout = false;
@@ -46,11 +47,6 @@ internal sealed class TransferStub : TftpTransfer
     public void OnTimer()
     {
         State.OnTimer();
-    }
-
-    protected override ITransferState DecorateForLogging(ITransferState state)
-    {
-        return state;
     }
 
     protected override void Dispose(bool disposing)

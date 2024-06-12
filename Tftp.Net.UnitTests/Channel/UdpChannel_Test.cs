@@ -19,14 +19,14 @@ internal class UdpChannel_Test
     [Test]
     public void DeniesSendingOnClosedConnections()
     {
-        Assert.Throws<InvalidOperationException>(() => tested.Send(new Acknowledgement(1)));
+        Assert.Throws<InvalidOperationException>(() => tested.Send(new Acknowledgement { BlockNumber = 1 }));
     }
 
     [Test]
     public void DeniesSendingWhenNoRemoteAddressIsSet()
     {
         tested.Open();
-        Assert.Throws<InvalidOperationException>(() => tested.Send(new Acknowledgement(1)));
+        Assert.Throws<InvalidOperationException>(() => tested.Send(new Acknowledgement { BlockNumber = 1 }));
     }
 
     [Test]
@@ -36,7 +36,7 @@ internal class UdpChannel_Test
 
         tested.Open();
         tested.RemoteEndpoint = (IPEndPoint)remote.Client.LocalEndPoint;
-        tested.Send(new Acknowledgement(1));
+        tested.Send(new Acknowledgement { BlockNumber = 1 });
 
         AssertBytesReceived(remote, TimeSpan.FromMilliseconds(500));
     }

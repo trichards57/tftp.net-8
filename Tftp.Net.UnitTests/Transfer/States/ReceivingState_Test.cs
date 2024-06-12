@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -21,9 +22,9 @@ internal class ReceivingState_Test
         transfer.BlockCounterWrapping = BlockCounterWrapAround.ToOne;
         TransferUntilBlockCounterWrapIsAboutToWrap();
 
-        transfer.OnCommand(new Data(1, new byte[1]));
+        transfer.OnCommand(new Data { BlockNumber = 1, Bytes = new byte[1] });
 
-        Assert.That((transfer.SentCommands[^1] as Acknowledgement).BlockNumber, Is.EqualTo(1));
+        Assert.That(((Acknowledgement)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(1));
     }
 
     [Test]
@@ -31,9 +32,9 @@ internal class ReceivingState_Test
     {
         TransferUntilBlockCounterWrapIsAboutToWrap();
 
-        transfer.OnCommand(new Data(0, new byte[1]));
+        transfer.OnCommand(new Data { BlockNumber = 0, Bytes = new byte[1] });
 
-        Assert.That((transfer.SentCommands[^1] as Acknowledgement).BlockNumber, Is.EqualTo(0));
+        Assert.That(((Acknowledgement)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(0));
     }
 
     [Test]
@@ -54,7 +55,7 @@ internal class ReceivingState_Test
         transfer.OnError += (t, error) => { onErrorWasCalled = true; };
 
         Assert.That(onErrorWasCalled, Is.False);
-        transfer.OnCommand(new Error(123, "Test Error"));
+        transfer.OnCommand(new Error { ErrorCode = 123, Message = "Test Error" });
         Assert.Multiple(() =>
         {
             Assert.That(onErrorWasCalled, Is.True);
@@ -65,7 +66,7 @@ internal class ReceivingState_Test
     [Test]
     public void IgnoresWrongPackets()
     {
-        transfer.OnCommand(new Data(2, new byte[100]));
+        transfer.OnCommand(new Data { BlockNumber = 2, Bytes = new byte[100] });
         Assert.Multiple(() =>
         {
             Assert.That(transfer.CommandWasSent(typeof(Acknowledgement)), Is.False);
@@ -84,7 +85,7 @@ internal class ReceivingState_Test
         };
 
         Assert.That(onFinishedWasCalled, Is.False);
-        transfer.OnCommand(new Data(1, new byte[100]));
+        transfer.OnCommand(new Data { BlockNumber = 1, Bytes = new byte[100] });
         Assert.Multiple(() =>
         {
             Assert.That(onFinishedWasCalled, Is.True);
@@ -107,7 +108,7 @@ internal class ReceivingState_Test
         };
 
         Assert.That(onProgressWasCalled, Is.False);
-        transfer.OnCommand(new Data(1, new byte[1000]));
+        transfer.OnCommand(new Data { BlockNumber = 1, Bytes = new byte[1000] });
         Assert.Multiple(() =>
         {
             Assert.That(onProgressWasCalled, Is.True);
@@ -118,7 +119,7 @@ internal class ReceivingState_Test
     [Test]
     public void ReceivesPacket()
     {
-        transfer.OnCommand(new Data(1, new byte[100]));
+        transfer.OnCommand(new Data { BlockNumber = 1, Bytes = new byte[100] });
         Assert.Multiple(() =>
         {
             Assert.That(transfer.CommandWasSent(typeof(Acknowledgement)), Is.True);
@@ -129,7 +130,7 @@ internal class ReceivingState_Test
     [Test]
     public void SendsAcknowledgement()
     {
-        transfer.OnCommand(new Data(1, new byte[100]));
+        transfer.OnCommand(new Data { BlockNumber = 1, Bytes = new byte[100] });
         Assert.That(transfer.CommandWasSent(typeof(Acknowledgement)), Is.True);
     }
 
@@ -138,7 +139,7 @@ internal class ReceivingState_Test
     {
         ms = new MemoryStream();
         transfer = new TransferStub(ms);
-        transfer.SetState(new Receiving());
+        transfer.SetState(new Receiving(NullLogger.Instance));
     }
 
     [TearDown]
@@ -155,7 +156,7 @@ internal class ReceivingState_Test
             RetryTimeout = new TimeSpan(0),
             RetryCount = 1,
         };
-        transferWithLowTimeout.SetState(new Receiving());
+        transferWithLowTimeout.SetState(new Receiving(NullLogger.Instance));
 
         transferWithLowTimeout.OnTimer();
         Assert.That(transferWithLowTimeout.HadNetworkTimeout, Is.False);
@@ -166,9 +167,9 @@ internal class ReceivingState_Test
     private void TransferUntilBlockCounterWrapIsAboutToWrap()
     {
         transfer.BlockSize = 1;
-        for (int i = 1; i <= 65535; i++)
+        for (ushort i = 1; i <= 65535; i++)
         {
-            transfer.OnCommand(new Data((ushort)i, new byte[1]));
+            transfer.OnCommand(new Data { BlockNumber = i, Bytes = new byte[1] });
         }
     }
 }

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Tftp.Net.Transfer.States;
 
@@ -22,7 +23,7 @@ internal class ClosedState_Test
     [Test]
     public void IgnoresCommands()
     {
-        transfer.OnCommand(new Error(10, "Test"));
+        transfer.OnCommand(new Error { ErrorCode = 10, Message = "Test" });
         Assert.That(transfer.State, Is.InstanceOf<Closed>());
     }
 
@@ -30,7 +31,7 @@ internal class ClosedState_Test
     public void Setup()
     {
         transfer = new TransferStub();
-        transfer.SetState(new Closed());
+        transfer.SetState(new Closed(NullLogger.Instance));
     }
 
     [TearDown]

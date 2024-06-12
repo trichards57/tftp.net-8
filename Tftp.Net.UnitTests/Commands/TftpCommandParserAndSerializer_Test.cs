@@ -14,7 +14,7 @@ internal class TftpCommandParserAndSerializer_Test
     [Test]
     public void ParsesAck()
     {
-        var original = new Acknowledgement(10);
+        var original = new Acknowledgement { BlockNumber = 10 };
 
         var parsed = (Acknowledgement)CommandParser.Parse(Serialize(original));
         Assert.That(parsed.BlockNumber, Is.EqualTo(original.BlockNumber));
@@ -24,7 +24,7 @@ internal class TftpCommandParserAndSerializer_Test
     public void ParsesData()
     {
         byte[] data = [12, 15, 19, 0, 4];
-        var original = new Data(123, data);
+        var original = new Data { BlockNumber = 123, Bytes = data };
 
         Data parsed = (Data)CommandParser.Parse(Serialize(original));
         Assert.Multiple(() =>
@@ -42,7 +42,7 @@ internal class TftpCommandParserAndSerializer_Test
     [Test]
     public void ParsesError()
     {
-        var original = new Error(15, "Hallo Welt");
+        var original = new Error { ErrorCode = 15, Message = "Hallo Welt" };
 
         var parsed = (Error)CommandParser.Parse(Serialize(original));
         Assert.Multiple(() =>

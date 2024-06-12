@@ -2,24 +2,30 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
 using System.Net;
+using Tftp.Net.Trace;
 
 namespace Tftp.Net.Transfer.States;
 
-internal class SendWriteRequest : StateWithNetworkTimeout
+internal class SendWriteRequest(ILogger logger) : StateWithNetworkTimeout(logger)
 {
+    private readonly ILogger logger = logger;
+
     /// <inheritdoc/>
     public override void OnCancel(TftpErrorPacket reason)
     {
-        Context.SetState(new CancelledByUser(reason));
+        logger.StateCancelled(nameof(SendWriteRequest), reason.ErrorCode, reason.ErrorMessage);
+        Context.SetState(new CancelledByUser(reason, logger));
     }
 
     /// <inheritdoc/>
     public override void OnCommand(ITftpCommand command, IPEndPoint endpoint)
     {
-        if (command is OptionAcknowledgement)
+        logger.StateCommandReceived(nameof(SendWriteRequest));
+        if (command is OptionAcknowledgement oAck)
         {
-            var acknowledged = new TransferOptionSet((command as OptionAcknowledgement).Options);
+            var acknowledged = new TransferOptionSet(oAck.Options);
             Context.FinishOptionNegotiation(acknowledged);
             BeginSendingTo(endpoint);
         }
@@ -31,7 +37,7 @@ internal class SendWriteRequest : StateWithNetworkTimeout
         else if (command is Error error)
         {
             // The server denied our request
-            Context.SetState(new ReceivedError(error));
+            Context.SetState(new ReceivedError(error, logger));
         }
         else
         {
@@ -42,6 +48,7 @@ internal class SendWriteRequest : StateWithNetworkTimeout
     /// <inheritdoc/>
     public override void OnStateEnter()
     {
+        logger.StateEntered(nameof(SendWriteRequest));
         base.OnStateEnter();
         SendRequest();
     }
@@ -52,7 +59,7 @@ internal class SendWriteRequest : StateWithNetworkTimeout
         Context.GetConnection().RemoteEndpoint = endpoint;
 
         // Start sending packets
-        Context.SetState(new Sending());
+        Context.SetState(new Sending(logger));
     }
 
     private void SendRequest()

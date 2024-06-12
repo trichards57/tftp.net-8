@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -30,7 +31,7 @@ internal class StartIncomingReadState_Test
     public void CanStartWithOptions()
     {
         // Simulate that we got a request for a option
-        transfer.SetState(new StartIncomingRead([new TransferOption("blksize", "999")]));
+        transfer.SetState(new StartIncomingRead([new TransferOption("blksize", "999")], NullLogger.Instance));
         Assert.That(transfer.BlockSize, Is.EqualTo(999));
         transfer.Start(new MemoryStream(new byte[50000]));
         Assert.That(transfer.State, Is.InstanceOf<SendOptionAcknowledgementForReadRequest>());
@@ -41,7 +42,7 @@ internal class StartIncomingReadState_Test
     [Test]
     public void CanStartWithoutOptions()
     {
-        transfer.SetState(new StartIncomingRead([]));
+        transfer.SetState(new StartIncomingRead([], NullLogger.Instance));
         transfer.Start(new MemoryStream(new byte[50000]));
         Assert.That(transfer.State, Is.InstanceOf<Sending>());
     }
@@ -71,7 +72,7 @@ internal class StartIncomingReadState_Test
     [Test]
     public void IgnoresCommands()
     {
-        transfer.OnCommand(new Error(5, "Hallo Welt"));
+        transfer.OnCommand(new Error { ErrorCode = 5, Message = "Hallo Welt" });
         Assert.That(transfer.State, Is.InstanceOf<StartIncomingRead>());
     }
 
@@ -79,7 +80,7 @@ internal class StartIncomingReadState_Test
     public void Setup()
     {
         transfer = new TransferStub();
-        transfer.SetState(new StartIncomingRead([new TransferOption("tsize", "0")]));
+        transfer.SetState(new StartIncomingRead([new TransferOption("tsize", "0")], NullLogger.Instance));
     }
 
     [TearDown]

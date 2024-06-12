@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -29,7 +30,7 @@ internal class StartIncomingWriteState_Test
     [Test]
     public void CanStartWithOptions()
     {
-        transfer.SetState(new StartIncomingWrite([new TransferOption("blksize", "999")]));
+        transfer.SetState(new StartIncomingWrite([new TransferOption("blksize", "999")], NullLogger.Instance));
         Assert.That(transfer.BlockSize, Is.EqualTo(999));
         transfer.Start(new MemoryStream(new byte[50000]));
         OptionAcknowledgement cmd = (OptionAcknowledgement)transfer.SentCommands[^1];
@@ -52,7 +53,7 @@ internal class StartIncomingWriteState_Test
     [Test]
     public void IgnoresCommands()
     {
-        transfer.OnCommand(new Error(5, "Hallo Welt"));
+        transfer.OnCommand(new Error { ErrorCode = 5, Message = "Hallo Welt" });
         Assert.That(transfer.State, Is.InstanceOf<StartIncomingWrite>());
     }
 
@@ -60,7 +61,7 @@ internal class StartIncomingWriteState_Test
     public void Setup()
     {
         transfer = new TransferStub();
-        transfer.SetState(new StartIncomingWrite([]));
+        transfer.SetState(new StartIncomingWrite([], NullLogger.Instance));
     }
 
     [TearDown]

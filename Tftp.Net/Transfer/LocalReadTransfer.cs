@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using Tftp.Net.Channel;
@@ -9,7 +10,8 @@ using Tftp.Net.Transfer.States;
 
 namespace Tftp.Net.Transfer;
 
-internal class LocalReadTransfer(ITransferChannel connection, string filename, IEnumerable<TransferOption> options) : TftpTransfer(connection, filename, new StartIncomingRead(options))
+internal class LocalReadTransfer(ITransferChannel connection, string filename, IEnumerable<TransferOption> options, ILogger logger) 
+    : TftpTransfer(connection, filename, new StartIncomingRead(options, logger), logger)
 {
     public override int BlockSize
     {

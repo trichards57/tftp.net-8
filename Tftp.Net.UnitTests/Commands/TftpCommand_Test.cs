@@ -12,7 +12,7 @@ internal class TftpCommand_Test
     [Test]
     public void CreateAck()
     {
-        var command = new Acknowledgement(100);
+        var command = new Acknowledgement { BlockNumber = 100 };
         Assert.That(command.BlockNumber, Is.EqualTo(100));
     }
 
@@ -20,7 +20,7 @@ internal class TftpCommand_Test
     public void CreateData()
     {
         var data = new byte[] { 1, 2, 3 };
-        var command = new Data(150, data);
+        var command = new Data { BlockNumber = 150, Bytes = data };
         Assert.Multiple(() =>
         {
             Assert.That(command.BlockNumber, Is.EqualTo(150));
@@ -31,7 +31,7 @@ internal class TftpCommand_Test
     [Test]
     public void CreateError()
     {
-        var command = new Error(123, "Hallo Welt");
+        var command = new Error { ErrorCode = 123, Message = "Hallo Welt" };
         Assert.Multiple(() =>
         {
             Assert.That(command.ErrorCode, Is.EqualTo(123));

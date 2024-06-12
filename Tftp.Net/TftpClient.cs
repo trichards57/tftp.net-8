@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -17,14 +19,16 @@ public class TftpClient
 {
     private const int DefaultServerPort = 69;
     private readonly IPEndPoint remoteAddress;
+    private readonly ILogger logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TftpClient"/> class.
     /// </summary>
     /// <param name="remoteAddress">Address of the server that you would like to connect to.</param>
-    public TftpClient(IPEndPoint remoteAddress)
+    public TftpClient(IPEndPoint remoteAddress, ILogger logger = null)
     {
         this.remoteAddress = remoteAddress;
+        this.logger = logger ?? NullLogger.Instance;
     }
 
     /// <summary>
@@ -32,8 +36,8 @@ public class TftpClient
     /// </summary>
     /// <param name="ip">Address of the server that you want connect to.</param>
     /// <param name="port">Port on the server that you want connect to.</param>
-    public TftpClient(IPAddress ip, int port = DefaultServerPort)
-        : this(new IPEndPoint(ip, port))
+    public TftpClient(IPAddress ip, int port = DefaultServerPort, ILogger logger = null)
+        : this(new IPEndPoint(ip, port), logger)
     {
     }
 
@@ -42,10 +46,11 @@ public class TftpClient
     /// </summary>
     /// <param name="host">Hostname or IP to connect to.</param>
     /// <param name="port">Port to connect to.</param>
-    public TftpClient(string host, int port = DefaultServerPort)
+    public TftpClient(string host, int port = DefaultServerPort, ILogger logger = null)
     {
         IPAddress ip = Array.Find(Dns.GetHostAddresses(host), x => x.AddressFamily == AddressFamily.InterNetwork) ?? throw new ArgumentException("Could not convert '" + host + "' to an IPv4 address.", nameof(host));
         remoteAddress = new IPEndPoint(ip, port);
+        this.logger = logger ?? NullLogger.Instance;
     }
 
     /// <summary>
@@ -57,7 +62,7 @@ public class TftpClient
     public ITftpTransfer Download(string filename)
     {
         ITransferChannel channel = new UdpChannel(new UdpClient(new IPEndPoint(IPAddress.Any, 0))) { RemoteEndpoint = remoteAddress };
-        return new RemoteReadTransfer(channel, filename);
+        return new RemoteReadTransfer(channel, filename, logger);
     }
 
     /// <summary>
@@ -69,6 +74,6 @@ public class TftpClient
     public ITftpTransfer Upload(string filename)
     {
         ITransferChannel channel = new UdpChannel(new UdpClient(new IPEndPoint(IPAddress.Any, 0))) { RemoteEndpoint = remoteAddress };
-        return new RemoteWriteTransfer(channel, filename);
+        return new RemoteWriteTransfer(channel, filename, logger);
     }
 }

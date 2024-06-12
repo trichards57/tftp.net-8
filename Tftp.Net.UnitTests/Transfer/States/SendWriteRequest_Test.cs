@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -18,7 +19,7 @@ internal class SendWriteRequest_Test
     public void Setup()
     {
         transfer = new TransferStub(new MemoryStream(new byte[5000]));
-        transfer.SetState(new SendWriteRequest());
+        transfer.SetState(new SendWriteRequest(NullLogger.Instance));
     }
 
     [Test]
@@ -36,21 +37,21 @@ internal class SendWriteRequest_Test
     public void SendsWriteRequest()
     {
         var tx = new TransferStub(new MemoryStream(new byte[5000]));
-        tx.SetState(new SendWriteRequest());
+        tx.SetState(new SendWriteRequest(NullLogger.Instance));
         Assert.That(tx.CommandWasSent(typeof(WriteRequest)), Is.True);
     }
 
     [Test]
     public void HandlesAcknowledgement()
     {
-        transfer.OnCommand(new Acknowledgement(0));
+        transfer.OnCommand(new Acknowledgement { BlockNumber = 0 });
         Assert.That(transfer.State, Is.InstanceOf<Sending>());
     }
 
     [Test]
     public void IgnoresWrongAcknowledgement()
     {
-        transfer.OnCommand(new Acknowledgement(5));
+        transfer.OnCommand(new Acknowledgement { BlockNumber = 5 });
         Assert.That(transfer.State, Is.InstanceOf<SendWriteRequest>());
     }
 
@@ -58,7 +59,7 @@ internal class SendWriteRequest_Test
     public void HandlesOptionAcknowledgement()
     {
         transfer.BlockSize = 999;
-        transfer.OnCommand(new OptionAcknowledgement([new TransferOption("blksize", "800")]));
+        transfer.OnCommand(new OptionAcknowledgement { Options = [new TransferOption("blksize", "800")] });
         Assert.That(transfer.BlockSize, Is.EqualTo(800));
     }
 
@@ -66,7 +67,7 @@ internal class SendWriteRequest_Test
     public void HandlesMissingOptionAcknowledgement()
     {
         transfer.BlockSize = 999;
-        transfer.OnCommand(new Acknowledgement(0));
+        transfer.OnCommand(new Acknowledgement { BlockNumber = 0 });
         Assert.That(transfer.BlockSize, Is.EqualTo(512));
     }
 
@@ -77,7 +78,7 @@ internal class SendWriteRequest_Test
         transfer.OnError += (t, error) => { onErrorWasCalled = true; };
 
         Assert.That(onErrorWasCalled, Is.False);
-        transfer.OnCommand(new Error(123, "Test Error"));
+        transfer.OnCommand(new Error { ErrorCode = 123, Message = "Test Error" });
         Assert.Multiple(() =>
         {
             Assert.That(onErrorWasCalled, Is.True);
@@ -93,7 +94,7 @@ internal class SendWriteRequest_Test
         {
             RetryTimeout = new TimeSpan(0),
         };
-        transferWithLowTimeout.SetState(new SendWriteRequest());
+        transferWithLowTimeout.SetState(new SendWriteRequest(NullLogger.Instance));
 
         Assert.That(transferWithLowTimeout.CommandWasSent(typeof(WriteRequest)), Is.True);
         transferWithLowTimeout.SentCommands.Clear();
@@ -110,7 +111,7 @@ internal class SendWriteRequest_Test
             RetryTimeout = new TimeSpan(0),
             RetryCount = 1,
         };
-        transferWithLowTimeout.SetState(new SendWriteRequest());
+        transferWithLowTimeout.SetState(new SendWriteRequest(NullLogger.Instance));
 
         transferWithLowTimeout.OnTimer();
         Assert.That(transferWithLowTimeout.HadNetworkTimeout, Is.False);

@@ -6,7 +6,7 @@ using System.Net;
 
 namespace Tftp.Net.Transfer.States;
 
-internal class BaseState : ITransferState
+internal abstract class BaseState : ITransferState
 {
     public TftpTransfer Context { get; set; }
 

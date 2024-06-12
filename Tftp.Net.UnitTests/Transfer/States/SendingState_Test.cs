@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -20,9 +21,9 @@ internal class SendingState_Test
         SetupTransferThatWillWrapAroundBlockCount();
 
         RunTransferUntilBlockCount(65535);
-        transfer.OnCommand(new Acknowledgement(65535));
+        transfer.OnCommand(new Acknowledgement { BlockNumber = 65535 });
 
-        Assert.That((transfer.SentCommands[^1] as Data).BlockNumber, Is.EqualTo(0));
+        Assert.That(((Data)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(0));
     }
 
     [Test]
@@ -32,9 +33,9 @@ internal class SendingState_Test
         transfer.BlockCounterWrapping = BlockCounterWrapAround.ToOne;
 
         RunTransferUntilBlockCount(65535);
-        transfer.OnCommand(new Acknowledgement(65535));
+        transfer.OnCommand(new Acknowledgement { BlockNumber = 65535 });
 
-        Assert.That((transfer.SentCommands[^1] as Data).BlockNumber, Is.EqualTo(1));
+        Assert.That(((Data)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(1));
     }
 
     [Test]
@@ -54,7 +55,7 @@ internal class SendingState_Test
         transfer.SentCommands.Clear();
         Assert.That(transfer.CommandWasSent(typeof(Data)), Is.False);
 
-        transfer.OnCommand(new Acknowledgement(1));
+        transfer.OnCommand(new Acknowledgement { BlockNumber = 1 });
         Assert.That(transfer.CommandWasSent(typeof(Data)), Is.True);
     }
 
@@ -65,7 +66,7 @@ internal class SendingState_Test
         transfer.OnError += (t, error) => { onErrorWasCalled = true; };
 
         Assert.That(onErrorWasCalled, Is.False);
-        transfer.OnCommand(new Error(123, "Test Error"));
+        transfer.OnCommand(new Error { ErrorCode = 123, Message = "Test Error" });
         Assert.Multiple(() =>
         {
             Assert.That(onErrorWasCalled, Is.True);
@@ -79,18 +80,18 @@ internal class SendingState_Test
         transfer.SentCommands.Clear();
         Assert.That(transfer.CommandWasSent(typeof(Data)), Is.False);
 
-        transfer.OnCommand(new Acknowledgement(0));
+        transfer.OnCommand(new Acknowledgement { BlockNumber = 0 });
         Assert.That(transfer.CommandWasSent(typeof(Data)), Is.False);
     }
 
     [Test]
     public void IncreasesBlockCountWithEachAcknowledgement()
     {
-        Assert.That((transfer.SentCommands[^1] as Data).BlockNumber, Is.EqualTo(1));
+        Assert.That(((Data)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(1));
 
-        transfer.OnCommand(new Acknowledgement(1));
+        transfer.OnCommand(new Acknowledgement { BlockNumber = 1 });
 
-        Assert.That((transfer.SentCommands[^1] as Data).BlockNumber, Is.EqualTo(2));
+        Assert.That(((Data)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(2));
     }
 
     [Test]
@@ -108,7 +109,7 @@ internal class SendingState_Test
         };
 
         Assert.That(onProgressWasCalled, Is.False);
-        transfer.OnCommand(new Acknowledgement(1));
+        transfer.OnCommand(new Acknowledgement { BlockNumber = 1 });
         Assert.That(onProgressWasCalled, Is.True);
     }
 
@@ -119,7 +120,7 @@ internal class SendingState_Test
         {
             RetryTimeout = new TimeSpan(0),
         };
-        transferWithLowTimeout.SetState(new Sending());
+        transferWithLowTimeout.SetState(new Sending(NullLogger.Instance));
 
         Assert.That(transferWithLowTimeout.CommandWasSent(typeof(Data)), Is.True);
         transferWithLowTimeout.SentCommands.Clear();
@@ -138,7 +139,7 @@ internal class SendingState_Test
     public void Setup()
     {
         transfer = new TransferStub(new MemoryStream(new byte[5000]));
-        transfer.SetState(new Sending());
+        transfer.SetState(new Sending(NullLogger.Instance));
     }
 
     [TearDown]
@@ -155,7 +156,7 @@ internal class SendingState_Test
             RetryTimeout = new TimeSpan(0),
             RetryCount = 1,
         };
-        transferWithLowTimeout.SetState(new Sending());
+        transferWithLowTimeout.SetState(new Sending(NullLogger.Instance));
 
         transferWithLowTimeout.OnTimer();
         Assert.That(transferWithLowTimeout.HadNetworkTimeout, Is.False);
@@ -165,9 +166,9 @@ internal class SendingState_Test
 
     private void RunTransferUntilBlockCount(int targetBlockCount)
     {
-        while ((transfer.SentCommands[^1] as Data).BlockNumber != targetBlockCount)
+        while (((Data)transfer.SentCommands[^1]).BlockNumber != targetBlockCount)
         {
-            transfer.OnCommand(new Acknowledgement((transfer.SentCommands[^1] as Data).BlockNumber));
+            transfer.OnCommand(new Acknowledgement { BlockNumber = ((Data)transfer.SentCommands[^1]).BlockNumber });
         }
     }
 
@@ -177,6 +178,6 @@ internal class SendingState_Test
         {
             BlockSize = 1,
         };
-        transfer.SetState(new Sending());
+        transfer.SetState(new Sending(NullLogger.Instance));
     }
 }

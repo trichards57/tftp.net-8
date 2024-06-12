@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Tftp.Net.Transfer.States;
 
@@ -32,7 +33,7 @@ internal class ReceivedErrorState_Test
         };
 
         Assert.That(onErrorWasCalled, Is.False);
-        tx.SetState(new ReceivedError(new TftpErrorPacket(123, "My Error")));
+        tx.SetState(new ReceivedError(new TftpErrorPacket(123, "My Error"), NullLogger.Instance));
         Assert.That(onErrorWasCalled, Is.True);
     }
 
@@ -40,7 +41,7 @@ internal class ReceivedErrorState_Test
     public void Setup()
     {
         transfer = new TransferStub();
-        transfer.SetState(new ReceivedError(new TftpErrorPacket(123, "Error")));
+        transfer.SetState(new ReceivedError(new TftpErrorPacket(123, "Error"), NullLogger.Instance));
     }
 
     [TearDown]

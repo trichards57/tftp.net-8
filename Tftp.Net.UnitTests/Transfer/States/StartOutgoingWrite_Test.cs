@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -54,7 +55,7 @@ internal class StartOutgoingWrite_Test
     [Test]
     public void IgnoresCommands()
     {
-        transfer.OnCommand(new Error(5, "Hallo Welt"));
+        transfer.OnCommand(new Error { ErrorCode  = 5, Message = "Hallo Welt" });
         Assert.That(transfer.State, Is.InstanceOf<StartOutgoingWrite>());
     }
 
@@ -62,7 +63,7 @@ internal class StartOutgoingWrite_Test
     public void Setup()
     {
         transfer = new TransferStub();
-        transfer.SetState(new StartOutgoingWrite());
+        transfer.SetState(new StartOutgoingWrite(NullLogger.Instance));
     }
 
     [TearDown]

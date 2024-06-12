@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -29,7 +30,7 @@ internal class SendReadRequestState_Test
     [Test]
     public void HandlesData()
     {
-        transfer.OnCommand(new Data(1, new byte[10]));
+        transfer.OnCommand(new Data { BlockNumber = 1, Bytes = new byte[10] });
         Assert.Multiple(() =>
         {
             Assert.That(transfer.CommandWasSent(typeof(Acknowledgement)), Is.True);
@@ -45,7 +46,7 @@ internal class SendReadRequestState_Test
         transfer.OnError += (t, error) => onErrorWasCalled = true;
 
         Assert.That(onErrorWasCalled, Is.False);
-        transfer.OnCommand(new Error(123, "Test Error"));
+        transfer.OnCommand(new Error { ErrorCode = 123, Message = "Test Error" });
         Assert.Multiple(() =>
         {
             Assert.That(onErrorWasCalled, Is.True);
@@ -58,7 +59,7 @@ internal class SendReadRequestState_Test
     public void HandlesMissingOptionAcknowledgement()
     {
         transfer.BlockSize = 999;
-        transfer.OnCommand(new Data(1, new byte[10]));
+        transfer.OnCommand(new Data { BlockNumber = 1, Bytes = new byte[10] });
         Assert.That(transfer.BlockSize, Is.EqualTo(512));
     }
 
@@ -66,7 +67,7 @@ internal class SendReadRequestState_Test
     public void HandlesOptionAcknowledgement()
     {
         transfer.BlockSize = 999;
-        transfer.OnCommand(new OptionAcknowledgement([new TransferOption("blksize", "999")]));
+        transfer.OnCommand(new OptionAcknowledgement { Options = [new TransferOption("blksize", "999")] });
         Assert.Multiple(() =>
         {
             Assert.That(transfer.CommandWasSent(typeof(Acknowledgement)), Is.True);
@@ -81,7 +82,7 @@ internal class SendReadRequestState_Test
         {
             RetryTimeout = new TimeSpan(0),
         };
-        transferWithLowTimeout.SetState(new SendReadRequest());
+        transferWithLowTimeout.SetState(new SendReadRequest(NullLogger.Instance));
 
         Assert.That(transferWithLowTimeout.CommandWasSent(typeof(ReadRequest)), Is.True);
         transferWithLowTimeout.SentCommands.Clear();
@@ -101,7 +102,7 @@ internal class SendReadRequestState_Test
     {
         ms = new MemoryStream();
         transfer = new TransferStub(ms);
-        transfer.SetState(new SendReadRequest());
+        transfer.SetState(new SendReadRequest(NullLogger.Instance));
     }
 
     [TearDown]
@@ -118,7 +119,7 @@ internal class SendReadRequestState_Test
             RetryTimeout = new TimeSpan(0),
             RetryCount = 1,
         };
-        transferWithLowTimeout.SetState(new SendReadRequest());
+        transferWithLowTimeout.SetState(new SendReadRequest(NullLogger.Instance));
 
         transferWithLowTimeout.OnTimer();
         Assert.That(transferWithLowTimeout.HadNetworkTimeout, Is.False);

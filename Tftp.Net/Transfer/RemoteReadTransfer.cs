@@ -2,19 +2,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
 using System;
 using Tftp.Net.Channel;
 using Tftp.Net.Transfer.States;
 
 namespace Tftp.Net.Transfer;
 
-internal class RemoteReadTransfer : TftpTransfer
+internal class RemoteReadTransfer(ITransferChannel connection, string filename, ILogger logger) 
+    : TftpTransfer(connection, filename, new StartOutgoingRead(logger), logger)
 {
-    public RemoteReadTransfer(ITransferChannel connection, string filename)
-        : base(connection, filename, new StartOutgoingRead())
-    {
-    }
-
     public override long ExpectedSize
     {
         get { return base.ExpectedSize; }

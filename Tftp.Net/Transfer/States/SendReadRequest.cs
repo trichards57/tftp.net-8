@@ -2,21 +2,28 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
 using System.Net;
+using Tftp.Net.Trace;
 
 namespace Tftp.Net.Transfer.States;
 
-internal class SendReadRequest : StateWithNetworkTimeout
+internal class SendReadRequest(ILogger logger) : StateWithNetworkTimeout(logger)
 {
+    private readonly ILogger logger = logger;
+
     /// <inheritdoc/>
     public override void OnCancel(TftpErrorPacket reason)
     {
-        Context.SetState(new CancelledByUser(reason));
+        logger.StateCancelled(nameof(SendReadRequest), reason.ErrorCode, reason.ErrorMessage);
+        Context.SetState(new CancelledByUser(reason, logger));
     }
 
     /// <inheritdoc/>
     public override void OnCommand(ITftpCommand command, IPEndPoint endpoint)
     {
+        logger.StateCommandReceived(nameof(SendReadRequest));
+
         if (command is Data || command is OptionAcknowledgement)
         {
             // The server acknowledged our read request.
@@ -32,7 +39,7 @@ internal class SendReadRequest : StateWithNetworkTimeout
             }
 
             // Switch to the receiving state...
-            var nextState = new Receiving();
+            var nextState = new Receiving(logger);
             Context.SetState(nextState);
 
             // ...and let it handle the data packet
@@ -44,11 +51,11 @@ internal class SendReadRequest : StateWithNetworkTimeout
             Context.FinishOptionNegotiation(new TransferOptionSet(oAck.Options));
 
             // the server acknowledged our options. Confirm the final options
-            SendAndRepeat(new Acknowledgement(0));
+            SendAndRepeat(new Acknowledgement { BlockNumber = 0 });
         }
         else if (command is Error error)
         {
-            Context.SetState(new ReceivedError(error));
+            Context.SetState(new ReceivedError(error, logger));
         }
         else
         {
@@ -58,6 +65,7 @@ internal class SendReadRequest : StateWithNetworkTimeout
 
     public override void OnStateEnter()
     {
+        logger.StateEntered(nameof(SendReadRequest));
         base.OnStateEnter();
         SendRequest(); // Send a read request to the server
     }

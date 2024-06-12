@@ -2,13 +2,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
+using Tftp.Net.Trace;
 
 namespace Tftp.Net.Transfer.States;
 
-internal class StateThatExpectsMessagesFromDefaultEndPoint : StateWithNetworkTimeout, ITftpCommandVisitor
+internal class StateThatExpectsMessagesFromDefaultEndPoint(ILogger logger) : StateWithNetworkTimeout(logger), ITftpCommandVisitor
 {
+    private readonly ILogger logger = logger;
+
     public virtual void OnAcknowledgement(Acknowledgement command)
     {
         throw new NotImplementedException();
@@ -16,6 +20,8 @@ internal class StateThatExpectsMessagesFromDefaultEndPoint : StateWithNetworkTim
 
     public override void OnCommand(ITftpCommand command, IPEndPoint endpoint)
     {
+        logger.StateCommandReceived(nameof(StateThatExpectsMessagesFromDefaultEndPoint));
+
         if (!endpoint.Equals(Context.GetConnection().RemoteEndpoint))
         {
             throw new InvalidOperationException("Received message from illegal endpoint. Actual: " + endpoint + ". Expected: " + Context.GetConnection().RemoteEndpoint);

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using Tftp.Net.Channel;
@@ -9,13 +10,9 @@ using Tftp.Net.Transfer.States;
 
 namespace Tftp.Net.Transfer;
 
-internal class LocalWriteTransfer : TftpTransfer
+internal class LocalWriteTransfer(ITransferChannel connection, string filename, IEnumerable<TransferOption> options, ILogger logger) 
+    : TftpTransfer(connection, filename, new StartIncomingWrite(options, logger), logger)
 {
-    public LocalWriteTransfer(ITransferChannel connection, string filename, IEnumerable<TransferOption> options)
-        : base(connection, filename, new StartIncomingWrite(options))
-    {
-    }
-
     public override TftpTransferMode TransferMode
     {
         get { return base.TransferMode; }

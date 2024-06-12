@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Net;
@@ -16,9 +17,10 @@ internal class TftpTransfer : ITftpTransfer
 {
     private readonly object lockObject = new();
     private readonly Timer timer;
+    private readonly ILogger logger;
     private BlockCounterWrapAround wrapping = BlockCounterWrapAround.ToZero;
 
-    public TftpTransfer(ITransferChannel connection, string filename, ITransferState initialState)
+    public TftpTransfer(ITransferChannel connection, string filename, ITransferState initialState, ILogger logger)
     {
         ProposedOptions = TransferOptionSet.NewDefaultSet();
         Filename = filename;
@@ -29,6 +31,7 @@ internal class TftpTransfer : ITftpTransfer
         Connection.OnError += new TftpChannelErrorHandler(Connection_OnError);
         Connection.Open();
         timer = new Timer(Timer_OnTimer, null, 500, 500);
+        this.logger = logger;
     }
 
     public event TftpErrorHandler OnError;
@@ -191,14 +194,9 @@ internal class TftpTransfer : ITftpTransfer
 
     internal void SetState(ITransferState newState)
     {
-        State = DecorateForLogging(newState);
+        State = newState;
         State.Context = this;
         State.OnStateEnter();
-    }
-
-    protected virtual ITransferState DecorateForLogging(ITransferState state)
-    {
-        return TftpTrace.Enabled ? new LoggingStateDecorator(state, this) : state;
     }
 
     protected virtual void Dispose(bool disposing)
@@ -253,7 +251,7 @@ internal class TftpTransfer : ITftpTransfer
         }
         catch (Exception e)
         {
-            TftpTrace.Trace("Ignoring unhandled exception: " + e, this);
+            logger.SuppressedUnhandledException(e);
         }
     }
 }

@@ -2,12 +2,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using Microsoft.Extensions.Logging;
 using Tftp.Net.Trace;
 
 namespace Tftp.Net.Transfer.States;
 
-internal class StateWithNetworkTimeout : BaseState
+internal class StateWithNetworkTimeout(ILogger logger) : BaseState
 {
+    private readonly ILogger logger = logger;
     private ITftpCommand lastCommand;
     private int retriesUsed = 0;
     private SimpleTimer timer;
@@ -21,15 +23,17 @@ internal class StateWithNetworkTimeout : BaseState
     /// <inheritdoc/>
     public override void OnTimer()
     {
+        logger.StateTimer(nameof(StateWithNetworkTimeout));
         if (timer.IsTimeout())
         {
-            TftpTrace.Trace("Network timeout.", Context);
+            logger.TimedOut();
+
             timer.Restart();
 
             if (retriesUsed++ >= Context.RetryCount)
             {
                 ITftpTransferError error = new TimeoutError(Context.RetryTimeout, Context.RetryCount);
-                Context.SetState(new ReceivedError(error));
+                Context.SetState(new ReceivedError(error, logger));
             }
             else
             {
