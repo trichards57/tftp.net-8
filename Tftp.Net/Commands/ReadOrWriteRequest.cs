@@ -6,10 +6,8 @@ using System.Collections.Generic;
 
 namespace Tftp.Net;
 
-internal abstract class ReadOrWriteRequest(ushort opCode, string filename, TftpTransferMode mode, IEnumerable<TransferOption> options)
+internal abstract class ReadOrWriteRequest(string filename, TftpTransferMode mode, IEnumerable<TransferOption> options)
 {
-    private readonly ushort opCode = opCode;
-
     public string Filename { get; private set; } = filename;
 
     public TftpTransferMode Mode { get; private set; } = mode;
