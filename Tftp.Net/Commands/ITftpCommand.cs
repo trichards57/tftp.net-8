@@ -10,12 +10,6 @@ namespace Tftp.Net.Commands;
 internal interface ITftpCommand
 {
     /// <summary>
-    /// Called to raise the appropriate event on the visitor.
-    /// </summary>
-    /// <param name="visitor">The command visitor.</param>
-    void Visit(ITftpCommandVisitor visitor);
-
-    /// <summary>
     /// Called to write the command to the stream.
     /// </summary>
     /// <param name="writer">The writer to write to.</param>

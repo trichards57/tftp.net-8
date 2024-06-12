@@ -21,11 +21,6 @@ internal readonly record struct Error : ITftpCommand
         return new Error { ErrorCode = errorCode, Message = message };
     }
 
-    public void Visit(ITftpCommandVisitor visitor)
-    {
-        visitor.OnError(this);
-    }
-
     public void WriteToStream(TftpStreamWriter writer)
     {
         writer.WriteUInt16(OpCode);

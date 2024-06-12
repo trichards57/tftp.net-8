@@ -16,11 +16,6 @@ internal readonly record struct Acknowledgement : ITftpCommand
         return new Acknowledgement { BlockNumber = blockNumber };
     }
 
-    public void Visit(ITftpCommandVisitor visitor)
-    {
-        visitor.OnAcknowledgement(this);
-    }
-
     public void WriteToStream(TftpStreamWriter writer)
     {
         writer.WriteUInt16(OpCode);

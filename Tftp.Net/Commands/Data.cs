@@ -19,11 +19,6 @@ internal readonly record struct Data : ITftpCommand
         return new Data { BlockNumber = blockNumber, Bytes = data };
     }
 
-    public void Visit(ITftpCommandVisitor visitor)
-    {
-        visitor.OnData(this);
-    }
-
     public void WriteToStream(TftpStreamWriter writer)
     {
         writer.WriteUInt16(OpCode);

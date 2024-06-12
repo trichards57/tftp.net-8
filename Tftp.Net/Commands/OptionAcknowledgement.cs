@@ -19,11 +19,6 @@ internal readonly record struct OptionAcknowledgement : ITftpCommand
         return new OptionAcknowledgement { Options = options };
     }
 
-    public void Visit(ITftpCommandVisitor visitor)
-    {
-        visitor.OnOptionAcknowledgement(this);
-    }
-
     public void WriteToStream(TftpStreamWriter writer)
     {
         writer.WriteUInt16(OpCode);

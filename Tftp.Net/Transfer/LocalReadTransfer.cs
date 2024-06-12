@@ -16,6 +16,7 @@ namespace Tftp.Net.Transfer;
 
 internal sealed class LocalReadTransfer : ITftpTransfer
 {
+    private const ushort LastAvailableBlockNumber = 65535;
     private readonly StateMachine<State, Trigger>.TriggerWithParameters<ushort, IPEndPoint> acknowledgeTrigger;
     private readonly StateMachine<State, Trigger>.TriggerWithParameters<ushort, string> cancelTrigger;
     private readonly ITransferChannel connection;
@@ -126,6 +127,16 @@ internal sealed class LocalReadTransfer : ITftpTransfer
         stateMachine.Fire(Trigger.Start);
     }
 
+    private ushort CalculateNextBlockNumber(ushort previousBlockNumber)
+    {
+        if (previousBlockNumber == LastAvailableBlockNumber)
+        {
+            return BlockCounterWrapping == BlockCounterWrapAround.ToZero ? (ushort)0 : (ushort)1;
+        }
+
+        return (ushort)(previousBlockNumber + 1);
+    }
+
     private void CommandReceived(ITftpCommand command, IPEndPoint endpoint)
     {
         if (command is Acknowledgement ack)
@@ -165,7 +176,7 @@ internal sealed class LocalReadTransfer : ITftpTransfer
             else
             {
                 var oldBlockNumber = lastBlockNumber;
-                lastBlockNumber = BlockCounterWrapping.CalculateNextBlockNumber(lastBlockNumber);
+                lastBlockNumber = CalculateNextBlockNumber(lastBlockNumber);
                 stateMachine.Fire(acknowledgeTrigger, oldBlockNumber, connection.RemoteEndpoint);
             }
         }

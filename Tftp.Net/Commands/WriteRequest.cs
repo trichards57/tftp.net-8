@@ -27,9 +27,4 @@ internal class WriteRequest(string filename, TftpTransferMode mode, IEnumerable<
 
         return new WriteRequest(filename, mode, options);
     }
-
-    public void Visit(ITftpCommandVisitor visitor)
-    {
-        visitor.OnWriteRequest(this);
-    }
 }

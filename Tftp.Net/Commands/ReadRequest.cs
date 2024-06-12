@@ -28,9 +28,4 @@ internal class ReadRequest(string filename, TftpTransferMode mode, IEnumerable<T
 
         return new ReadRequest(filename, mode, options);
     }
-
-    public void Visit(ITftpCommandVisitor visitor)
-    {
-        visitor.OnReadRequest(this);
-    }
 }
