@@ -7,9 +7,10 @@ using System.IO;
 
 namespace Tftp.Net;
 
-internal class TftpStreamWriter(Stream stream) : IDisposable
+internal class TftpStreamWriter(Stream stream, bool disposeStream = false) : IDisposable
 {
     private readonly BinaryWriter writer = new(stream);
+    private readonly bool disposeStream = disposeStream;
     private bool disposed = false;
 
     public void Dispose()
@@ -44,7 +45,7 @@ internal class TftpStreamWriter(Stream stream) : IDisposable
             return;
         }
 
-        if (disposing)
+        if (disposing && disposeStream)
         {
             writer.Dispose();
         }

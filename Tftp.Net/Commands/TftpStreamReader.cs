@@ -8,9 +8,10 @@ using System.Text;
 
 namespace Tftp.Net;
 
-internal class TftpStreamReader(Stream stream) : IDisposable
+internal class TftpStreamReader(Stream stream, bool disposeStream = false) : IDisposable
 {
     private readonly BinaryReader reader = new(stream);
+    private readonly bool disposeStream = disposeStream;
     private bool disposed = false;
 
     public void Dispose()
@@ -67,7 +68,7 @@ internal class TftpStreamReader(Stream stream) : IDisposable
             return;
         }
 
-        if (disposing)
+        if (disposing && disposeStream)
         {
             reader.Dispose();
         }
