@@ -14,4 +14,10 @@ internal class Acknowledgement(ushort blockNumber) : ITftpCommand
     {
         visitor.OnAcknowledgement(this);
     }
+
+    public void WriteToStream(TftpStreamWriter writer)
+    {
+        writer.WriteUInt16(OpCode);
+        writer.WriteUInt16(BlockNumber);
+    }
 }

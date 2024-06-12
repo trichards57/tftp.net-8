@@ -58,7 +58,8 @@ internal class UdpChannel(UdpClient client) : ITransferChannel
         }
 
         using var stream = new MemoryStream();
-        CommandSerializer.Serialize(command, stream);
+        var writer = new TftpStreamWriter(stream);
+        command.WriteToStream(writer);
         byte[] data = stream.GetBuffer();
         client.Send(data, (int)stream.Length, endpoint);
     }

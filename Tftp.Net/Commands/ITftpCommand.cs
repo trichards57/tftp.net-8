@@ -14,4 +14,10 @@ internal interface ITftpCommand
     /// </summary>
     /// <param name="visitor">The command visitor.</param>
     void Visit(ITftpCommandVisitor visitor);
+
+    /// <summary>
+    /// Called to write the command to the stream.
+    /// </summary>
+    /// <param name="writer">The writer to write to.</param>
+    void WriteToStream(TftpStreamWriter writer);
 }

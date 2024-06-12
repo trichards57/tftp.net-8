@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace Tftp.Net;
 
 internal class WriteRequest(string filename, TftpTransferMode mode, IEnumerable<TransferOption> options)
-    : ReadOrWriteRequest(filename, mode, options), ITftpCommand
+    : ReadOrWriteRequest(OpCode, filename, mode, options), ITftpCommand
 {
     public const ushort OpCode = 2;
 

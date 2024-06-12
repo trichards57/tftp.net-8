@@ -81,7 +81,8 @@ internal class TftpCommandParserAndSerializer_Test
     private static byte[] Serialize(ITftpCommand command)
     {
         using var stream = new MemoryStream();
-        CommandSerializer.Serialize(command, stream);
+        var writer = new TftpStreamWriter(stream);
+        command.WriteToStream(writer);
         byte[] commandAsBytes = stream.GetBuffer();
         Array.Resize(ref commandAsBytes, (int)stream.Length);
         return commandAsBytes;

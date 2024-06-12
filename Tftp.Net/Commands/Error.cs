@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Text;
 
 namespace Tftp.Net;
 
@@ -17,5 +18,13 @@ internal class Error(ushort errorCode, string message) : ITftpCommand
     public void Visit(ITftpCommandVisitor visitor)
     {
         visitor.OnError(this);
+    }
+
+    public void WriteToStream(TftpStreamWriter writer)
+    {
+        writer.WriteUInt16(OpCode);
+        writer.WriteUInt16(ErrorCode);
+        writer.WriteBytes(Encoding.ASCII.GetBytes(Message));
+        writer.WriteByte(0);
     }
 }

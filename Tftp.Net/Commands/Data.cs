@@ -16,4 +16,11 @@ internal class Data(ushort blockNumber, byte[] data) : ITftpCommand
     {
         visitor.OnData(this);
     }
+
+    public void WriteToStream(TftpStreamWriter writer)
+    {
+        writer.WriteUInt16(OpCode);
+        writer.WriteUInt16(BlockNumber);
+        writer.WriteBytes(Bytes);
+    }
 }

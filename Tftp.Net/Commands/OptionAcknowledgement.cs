@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Text;
 
 namespace Tftp.Net;
 
@@ -15,5 +16,18 @@ internal class OptionAcknowledgement(IEnumerable<TransferOption> options) : ITft
     public void Visit(ITftpCommandVisitor visitor)
     {
         visitor.OnOptionAcknowledgement(this);
+    }
+
+    public void WriteToStream(TftpStreamWriter writer)
+    {
+        writer.WriteUInt16(OpCode);
+
+        foreach (var option in Options)
+        {
+            writer.WriteBytes(Encoding.ASCII.GetBytes(option.Name));
+            writer.WriteByte(0);
+            writer.WriteBytes(Encoding.ASCII.GetBytes(option.Value));
+            writer.WriteByte(0);
+        }
     }
 }

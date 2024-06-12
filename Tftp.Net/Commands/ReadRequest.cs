@@ -3,11 +3,12 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Text;
 
 namespace Tftp.Net;
 
 internal class ReadRequest(string filename, TftpTransferMode mode, IEnumerable<TransferOption> options)
-    : ReadOrWriteRequest(filename, mode, options), ITftpCommand
+    : ReadOrWriteRequest(OpCode, filename, mode, options), ITftpCommand
 {
     public const ushort OpCode = 1;
 
