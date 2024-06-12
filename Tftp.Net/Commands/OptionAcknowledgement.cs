@@ -13,6 +13,12 @@ internal class OptionAcknowledgement(IEnumerable<TransferOption> options) : ITft
 
     public IEnumerable<TransferOption> Options { get; } = options;
 
+    public static OptionAcknowledgement ReadFromStream(TftpStreamReader reader)
+    {
+        var options = TransferOptionParser.Parse(reader);
+        return new OptionAcknowledgement(options);
+    }
+
     public void Visit(ITftpCommandVisitor visitor)
     {
         visitor.OnOptionAcknowledgement(this);

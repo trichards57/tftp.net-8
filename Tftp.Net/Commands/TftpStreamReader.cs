@@ -4,6 +4,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 
 namespace Tftp.Net;
 
@@ -28,6 +29,27 @@ internal class TftpStreamReader(Stream stream) : IDisposable
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         return reader.ReadBytes(maxBytes);
+    }
+
+    public string ReadNullTerminatedString()
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+
+        var builder = new StringBuilder();
+
+        while (true)
+        {
+            var b = reader.ReadChar();
+
+            if (b == '\0')
+            {
+                break;
+            }
+
+            builder.Append(b);
+        }
+
+        return builder.ToString();
     }
 
     public ushort ReadUInt16()

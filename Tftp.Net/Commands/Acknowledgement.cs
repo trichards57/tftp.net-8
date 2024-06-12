@@ -10,6 +10,12 @@ internal class Acknowledgement(ushort blockNumber) : ITftpCommand
 
     public ushort BlockNumber { get; private set; } = blockNumber;
 
+    public static Acknowledgement ReadFromStream(TftpStreamReader reader)
+    {
+        var blockNumber = reader.ReadUInt16();
+        return new Acknowledgement(blockNumber);
+    }
+
     public void Visit(ITftpCommandVisitor visitor)
     {
         visitor.OnAcknowledgement(this);

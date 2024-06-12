@@ -1,4 +1,4 @@
-﻿// <copyright file="Error.cs" company="Tony Richards">
+﻿    // <copyright file="Error.cs" company="Tony Richards">
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -14,6 +14,13 @@ internal class Error(ushort errorCode, string message) : ITftpCommand
     public ushort ErrorCode { get; private set; } = errorCode;
 
     public string Message { get; private set; } = message;
+
+    public static Error ReadFromStream(TftpStreamReader reader)
+    {
+        var errorCode = reader.ReadUInt16();
+        var message = reader.ReadNullTerminatedString();
+        return new Error(errorCode, message);
+    }
 
     public void Visit(ITftpCommandVisitor visitor)
     {

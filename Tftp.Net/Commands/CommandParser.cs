@@ -3,9 +3,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Tftp.Net;
 
@@ -21,126 +19,24 @@ internal static class CommandParser
     {
         try
         {
-            return ParseInternal(message);
+            var reader = new TftpStreamReader(new MemoryStream(message));
+
+            var opcode = reader.ReadUInt16();
+
+            return opcode switch
+            {
+                ReadRequest.OpCode => ReadRequest.ReadFromStream(reader),
+                WriteRequest.OpCode => WriteRequest.ReadFromStream(reader),
+                Data.OpCode => Data.ReadFromStream(reader),
+                Acknowledgement.OpCode => Acknowledgement.ReadFromStream(reader),
+                Error.OpCode => Error.ReadFromStream(reader),
+                OptionAcknowledgement.OpCode => OptionAcknowledgement.ReadFromStream(reader),
+                _ => throw new TftpParserException("Invalid opcode"),
+            };
         }
-        catch (TftpParserException)
-        {
-            throw;
-        }
-        catch (Exception e)
+        catch (Exception e) when (e is not TftpParserException)
         {
             throw new TftpParserException(e);
         }
-    }
-
-    private static Acknowledgement ParseAcknowledgement(TftpStreamReader reader)
-    {
-        var blockNumber = reader.ReadUInt16();
-        return new Acknowledgement(blockNumber);
-    }
-
-    private static Data ParseData(TftpStreamReader reader)
-    {
-        var blockNumber = reader.ReadUInt16();
-        var data = reader.ReadBytes(10000);
-        return new Data(blockNumber, data);
-    }
-
-    private static Error ParseError(TftpStreamReader reader)
-    {
-        var errorCode = reader.ReadUInt16();
-        var message = ParseNullTerminatedString(reader);
-        return new Error(errorCode, message);
-    }
-
-    private static ITftpCommand ParseInternal(byte[] message)
-    {
-        var reader = new TftpStreamReader(new MemoryStream(message));
-
-        var opcode = reader.ReadUInt16();
-        return opcode switch
-        {
-            ReadRequest.OpCode => ParseReadRequest(reader),
-            WriteRequest.OpCode => ParseWriteRequest(reader),
-            Data.OpCode => ParseData(reader),
-            Acknowledgement.OpCode => ParseAcknowledgement(reader),
-            Error.OpCode => ParseError(reader),
-            OptionAcknowledgement.OpCode => ParseOptionAcknowledgement(reader),
-            _ => throw new TftpParserException("Invalid opcode"),
-        };
-    }
-
-    private static TftpTransferMode ParseModeType(string mode)
-    {
-        return mode.ToLowerInvariant() switch
-        {
-            "netascii" => TftpTransferMode.netascii,
-            "mail" => TftpTransferMode.mail,
-            "octet" => TftpTransferMode.octet,
-            _ => throw new TftpParserException($"Unknown mode type: {mode}"),
-        };
-    }
-
-    private static string ParseNullTerminatedString(TftpStreamReader reader)
-    {
-        byte b;
-        var str = new StringBuilder();
-        while ((b = reader.ReadByte()) > 0)
-        {
-            str.Append((char)b);
-        }
-
-        return str.ToString();
-    }
-
-    private static OptionAcknowledgement ParseOptionAcknowledgement(TftpStreamReader reader)
-    {
-        var options = ParseTransferOptions(reader);
-        return new OptionAcknowledgement(options);
-    }
-
-    private static ReadRequest ParseReadRequest(TftpStreamReader reader)
-    {
-        var filename = ParseNullTerminatedString(reader);
-        var mode = ParseModeType(ParseNullTerminatedString(reader));
-        var options = ParseTransferOptions(reader);
-        return new ReadRequest(filename, mode, options);
-    }
-
-    private static List<TransferOption> ParseTransferOptions(TftpStreamReader reader)
-    {
-        var options = new List<TransferOption>();
-
-        while (true)
-        {
-            string name;
-
-            try
-            {
-                name = ParseNullTerminatedString(reader);
-            }
-            catch (IOException)
-            {
-                name = string.Empty;
-            }
-
-            if (name.Length == 0)
-            {
-                break;
-            }
-
-            var value = ParseNullTerminatedString(reader);
-            options.Add(new TransferOption(name, value));
-        }
-
-        return options;
-    }
-
-    private static WriteRequest ParseWriteRequest(TftpStreamReader reader)
-    {
-        var filename = ParseNullTerminatedString(reader);
-        var mode = ParseModeType(ParseNullTerminatedString(reader));
-        var options = ParseTransferOptions(reader);
-        return new WriteRequest(filename, mode, options);
     }
 }
