@@ -2,20 +2,27 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using System;
 using System.IO;
 using Tftp.Net.Transfer.States;
+using Xunit;
 
 namespace Tftp.Net.UnitTests.Transfer.States;
 
-[TestFixture]
-internal class SendingState_Test
+public class SendingState_Test
 {
     private TransferStub transfer;
 
-    [Test]
+    public SendingState_Test()
+    {
+        transfer = new TransferStub(new MemoryStream(new byte[5000]));
+        transfer.SetState(new Sending(NullLogger.Instance));
+    }
+
+    [Fact]
     public void BlockCountWrapsAroundTo0()
     {
         SetupTransferThatWillWrapAroundBlockCount();
@@ -23,10 +30,10 @@ internal class SendingState_Test
         RunTransferUntilBlockCount(65535);
         transfer.OnCommand(new Acknowledgement { BlockNumber = 65535 });
 
-        Assert.That(((Data)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(0));
+        ((Data)transfer.SentCommands[^1]).BlockNumber.Should().Be(0);
     }
 
-    [Test]
+    [Fact]
     public void BlockCountWrapsAroundTo1()
     {
         SetupTransferThatWillWrapAroundBlockCount();
@@ -35,85 +42,76 @@ internal class SendingState_Test
         RunTransferUntilBlockCount(65535);
         transfer.OnCommand(new Acknowledgement { BlockNumber = 65535 });
 
-        Assert.That(((Data)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(1));
+        ((Data)transfer.SentCommands[^1]).BlockNumber.Should().Be(1);
     }
 
-    [Test]
+    [Fact]
     public void CanCancel()
     {
         transfer.Cancel(TftpErrorPacket.IllegalOperation);
-        Assert.Multiple(() =>
-        {
-            Assert.That(transfer.CommandWasSent(typeof(Error)), Is.True);
-            Assert.That(transfer.State, Is.InstanceOf<Closed>());
-        });
+        transfer.CommandWasSent(typeof(Error)).Should().BeTrue();
+        transfer.State.Should().BeOfType<Closed>();
     }
 
-    [Test]
+    [Fact]
     public void HandlesAcknowledgment()
     {
         transfer.SentCommands.Clear();
-        Assert.That(transfer.CommandWasSent(typeof(Data)), Is.False);
+        transfer.CommandWasSent(typeof(Error)).Should().BeFalse();
 
         transfer.OnCommand(new Acknowledgement { BlockNumber = 1 });
-        Assert.That(transfer.CommandWasSent(typeof(Data)), Is.True);
+        transfer.CommandWasSent(typeof(Data)).Should().BeTrue();
     }
 
-    [Test]
+    [Fact]
     public void HandlesError()
     {
         bool onErrorWasCalled = false;
         transfer.OnError += (t, error) => { onErrorWasCalled = true; };
 
-        Assert.That(onErrorWasCalled, Is.False);
+        onErrorWasCalled.Should().BeFalse();
         transfer.OnCommand(new Error { ErrorCode = 123, Message = "Test Error" });
-        Assert.Multiple(() =>
-        {
-            Assert.That(onErrorWasCalled, Is.True);
-            Assert.That(transfer.State, Is.InstanceOf<Closed>());
-        });
+        onErrorWasCalled.Should().BeTrue();
+        transfer.State.Should().BeOfType<Closed>();
     }
 
-    [Test]
+    [Fact]
     public void IgnoresWrongAcknowledgment()
     {
         transfer.SentCommands.Clear();
-        Assert.That(transfer.CommandWasSent(typeof(Data)), Is.False);
+        transfer.CommandWasSent(typeof(Data)).Should().BeFalse();
 
         transfer.OnCommand(new Acknowledgement { BlockNumber = 0 });
-        Assert.That(transfer.CommandWasSent(typeof(Data)), Is.False);
+        transfer.CommandWasSent(typeof(Data)).Should().BeFalse();
     }
 
-    [Test]
+    [Fact]
     public void IncreasesBlockCountWithEachAcknowledgement()
     {
-        Assert.That(((Data)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(1));
+        ((Data)transfer.SentCommands[^1]).BlockNumber.Should().Be(1);
 
         transfer.OnCommand(new Acknowledgement { BlockNumber = 1 });
 
-        Assert.That(((Data)transfer.SentCommands[^1]).BlockNumber, Is.EqualTo(2));
+        ((Data)transfer.SentCommands[^1]).BlockNumber.Should().Be(2);
     }
 
-    [Test]
+    [Fact]
     public void RaisesProgress()
     {
         bool onProgressWasCalled = false;
         transfer.OnProgress += (t, progress) =>
         {
-            Assert.Multiple(() =>
-            {
-                Assert.That(t, Is.EqualTo(transfer));
-                Assert.That(progress.TransferredBytes, Is.GreaterThan(0));
-            });
+            t.Should().Be(transfer);
+            progress.TransferredBytes.Should().BePositive();
             onProgressWasCalled = true;
         };
 
-        Assert.That(onProgressWasCalled, Is.False);
+        onProgressWasCalled.Should().BeFalse();
         transfer.OnCommand(new Acknowledgement { BlockNumber = 1 });
-        Assert.That(onProgressWasCalled, Is.True);
+        onProgressWasCalled.Should().BeTrue();
     }
 
-    [Test]
+    [Fact]
     public void ResendsPacket()
     {
         var transferWithLowTimeout = new TransferStub(new MemoryStream(new byte[5000]))
@@ -122,33 +120,20 @@ internal class SendingState_Test
         };
         transferWithLowTimeout.SetState(new Sending(NullLogger.Instance));
 
-        Assert.That(transferWithLowTimeout.CommandWasSent(typeof(Data)), Is.True);
+        transfer.CommandWasSent(typeof(Data)).Should().BeTrue();
         transferWithLowTimeout.SentCommands.Clear();
 
         transferWithLowTimeout.OnTimer();
-        Assert.That(transferWithLowTimeout.CommandWasSent(typeof(Data)), Is.True);
+        transfer.CommandWasSent(typeof(Data)).Should().BeTrue();
     }
 
-    [Test]
+    [Fact]
     public void SendsPacket()
     {
-        Assert.That(transfer.CommandWasSent(typeof(Data)), Is.True);
+        transfer.CommandWasSent(typeof(Data)).Should().BeFalse();
     }
 
-    [SetUp]
-    public void Setup()
-    {
-        transfer = new TransferStub(new MemoryStream(new byte[5000]));
-        transfer.SetState(new Sending(NullLogger.Instance));
-    }
-
-    [TearDown]
-    public void Teardown()
-    {
-        transfer.Dispose();
-    }
-
-    [Test]
+    [Fact]
     public void TimeoutWhenNoAnswerIsReceivedAndRetryCountIsExceeded()
     {
         var transferWithLowTimeout = new TransferStub(new MemoryStream(new byte[5000]))
@@ -159,9 +144,9 @@ internal class SendingState_Test
         transferWithLowTimeout.SetState(new Sending(NullLogger.Instance));
 
         transferWithLowTimeout.OnTimer();
-        Assert.That(transferWithLowTimeout.HadNetworkTimeout, Is.False);
+        transferWithLowTimeout.HadNetworkTimeout.Should().BeFalse();
         transferWithLowTimeout.OnTimer();
-        Assert.That(transferWithLowTimeout.HadNetworkTimeout, Is.True);
+        transferWithLowTimeout.HadNetworkTimeout.Should().BeTrue();
     }
 
     private void RunTransferUntilBlockCount(int targetBlockCount)

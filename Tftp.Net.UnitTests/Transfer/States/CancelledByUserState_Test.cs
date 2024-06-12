@@ -2,39 +2,32 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using NUnit.Framework;
 using Tftp.Net.Transfer.States;
+using Xunit;
 
 namespace Tftp.Net.UnitTests;
 
-[TestFixture]
-internal class CancelledByUserState_Test
+public class CancelledByUserState_Test
 {
-    private TransferStub transfer;
+    private readonly TransferStub transfer;
 
-    [Test]
+    [Fact]
     public void SendsErrorToClient()
     {
-        Assert.That(transfer.CommandWasSent(typeof(Error)), Is.True);
+        transfer.CommandWasSent(typeof(Error)).Should().BeTrue();
     }
 
-    [SetUp]
-    public void Setup()
+    public CancelledByUserState_Test()
     {
         transfer = new TransferStub();
         transfer.SetState(new CancelledByUser(TftpErrorPacket.IllegalOperation, NullLogger.Instance));
     }
 
-    [TearDown]
-    public void Teardown()
-    {
-        transfer.Dispose();
-    }
-
-    [Test]
+    [Fact]
     public void TransitionsToClosedState()
     {
-        Assert.That(transfer.State, Is.InstanceOf<Closed>());
+        transfer.State.Should().BeOfType<Closed>();
     }
 }

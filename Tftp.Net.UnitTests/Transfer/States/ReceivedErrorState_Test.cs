@@ -2,18 +2,24 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using NUnit.Framework;
 using Tftp.Net.Transfer.States;
+using Xunit;
 
 namespace Tftp.Net.UnitTests;
 
-[TestFixture]
-internal class ReceivedErrorState_Test
+public class ReceivedErrorState_Test
 {
-    private TransferStub transfer;
+    private readonly TransferStub transfer;
 
-    [Test]
+    public ReceivedErrorState_Test()
+    {
+        transfer = new TransferStub();
+        transfer.SetState(new ReceivedError(new TftpErrorPacket(123, "Error"), NullLogger.Instance));
+    }
+
+    [Fact]
     public void CallsOnError()
     {
         var onErrorWasCalled = false;
@@ -21,38 +27,21 @@ internal class ReceivedErrorState_Test
         tx.OnError += (t, error) =>
         {
             onErrorWasCalled = true;
-            Assert.Multiple(() =>
-            {
-                Assert.That(t, Is.EqualTo(tx));
+            t.Should().Be(tx);
+            var err = error.Should().BeOfType<TftpErrorPacket>().Subject;
 
-                Assert.That(error, Is.InstanceOf<TftpErrorPacket>());
-
-                Assert.That(((TftpErrorPacket)error).ErrorCode, Is.EqualTo(123));
-                Assert.That(((TftpErrorPacket)error).ErrorMessage, Is.EqualTo("My Error"));
-            });
+            err.ErrorCode.Should().Be(123);
+            err.ErrorMessage.Should().Be("My Error");
         };
 
-        Assert.That(onErrorWasCalled, Is.False);
+        onErrorWasCalled.Should().BeFalse();
         tx.SetState(new ReceivedError(new TftpErrorPacket(123, "My Error"), NullLogger.Instance));
-        Assert.That(onErrorWasCalled, Is.True);
+        onErrorWasCalled.Should().BeTrue();
     }
 
-    [SetUp]
-    public void Setup()
-    {
-        transfer = new TransferStub();
-        transfer.SetState(new ReceivedError(new TftpErrorPacket(123, "Error"), NullLogger.Instance));
-    }
-
-    [TearDown]
-    public void Teardown()
-    {
-        transfer.Dispose();
-    }
-
-    [Test]
+    [Fact]
     public void TransitionsToClosed()
     {
-        Assert.That(transfer.State, Is.InstanceOf<Closed>());
+        transfer.State.Should().BeOfType<Closed>();
     }
 }

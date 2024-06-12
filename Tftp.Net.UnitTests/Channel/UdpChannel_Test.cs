@@ -2,34 +2,36 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using NUnit.Framework;
+using FluentAssertions;
 using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Tftp.Net.Channel;
+using Xunit;
 
 namespace Tftp.Net.UnitTests;
 
-[TestFixture]
-internal class UdpChannel_Test
+public class UdpChannel_Test
 {
-    private UdpChannel tested;
+    private readonly UdpChannel tested = new(new(0));
 
-    [Test]
+    [Fact]
     public void DeniesSendingOnClosedConnections()
     {
-        Assert.Throws<InvalidOperationException>(() => tested.Send(new Acknowledgement { BlockNumber = 1 }));
+        var func = () => tested.Send(new Acknowledgement { BlockNumber = 1 });
+        func.Should().Throw<InvalidOperationException>();
     }
 
-    [Test]
+    [Fact]
     public void DeniesSendingWhenNoRemoteAddressIsSet()
     {
         tested.Open();
-        Assert.Throws<InvalidOperationException>(() => tested.Send(new Acknowledgement { BlockNumber = 1 }));
+        var func = () => tested.Send(new Acknowledgement { BlockNumber = 1 });
+        func.Should().Throw<InvalidOperationException>();
     }
 
-    [Test]
+    [Fact]
     public void SendsRealUdpPackets()
     {
         var remote = OpenRemoteUdpClient();
@@ -39,18 +41,6 @@ internal class UdpChannel_Test
         tested.Send(new Acknowledgement { BlockNumber = 1 });
 
         AssertBytesReceived(remote, TimeSpan.FromMilliseconds(500));
-    }
-
-    [SetUp]
-    public void Setup()
-    {
-        tested = new UdpChannel(new UdpClient(0));
-    }
-
-    [TearDown]
-    public void Teardown()
-    {
-        tested.Dispose();
     }
 
     private static void AssertBytesReceived(UdpClient remote, TimeSpan timeout)

@@ -2,83 +2,80 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using FluentAssertions;
 using NUnit.Framework;
 using System.IO;
+using Xunit;
 
 namespace Tftp.Net.UnitTests;
 
-[TestFixture]
-internal class TftpStreamReader_Test
+public class TftpStreamReader_Test
 {
     private readonly byte[] data = [0x00, 0x01, 0x02, 0x03];
-    private TftpStreamReader tested;
+    private readonly TftpStreamReader tested;
 
-    [Test]
-    public void ReadsIntoArraysWithPerfectSize()
-    {
-        byte[] bytes = tested.ReadBytes(4);
-        Assert.That(bytes, Has.Length.EqualTo(4));
-        Assert.Multiple(() =>
-        {
-            Assert.That(bytes[0], Is.EqualTo(0x00));
-            Assert.That(bytes[1], Is.EqualTo(0x01));
-            Assert.That(bytes[2], Is.EqualTo(0x02));
-            Assert.That(bytes[3], Is.EqualTo(0x03));
-        });
-    }
-
-    [Test]
-    public void ReadsIntoLargerArrays()
-    {
-        byte[] bytes = tested.ReadBytes(10);
-        Assert.That(bytes, Has.Length.EqualTo(4));
-        Assert.Multiple(() =>
-        {
-            Assert.That(bytes[0], Is.EqualTo(0x00));
-            Assert.That(bytes[1], Is.EqualTo(0x01));
-            Assert.That(bytes[2], Is.EqualTo(0x02));
-            Assert.That(bytes[3], Is.EqualTo(0x03));
-        });
-    }
-
-    [Test]
-    public void ReadsIntoSmallerArrays()
-    {
-        byte[] bytes = tested.ReadBytes(2);
-        Assert.That(bytes, Has.Length.EqualTo(2));
-        Assert.Multiple(() =>
-        {
-            Assert.That(bytes[0], Is.EqualTo(0x00));
-            Assert.That(bytes[1], Is.EqualTo(0x01));
-        });
-    }
-
-    [Test]
-    public void ReadsShorts()
-    {
-        Assert.That(tested.ReadUInt16(), Is.EqualTo(0x0001));
-        Assert.That(tested.ReadUInt16(), Is.EqualTo(0x0203));
-    }
-
-    [Test]
-    public void ReadsSingleBytes()
-    {
-        Assert.That(tested.ReadByte(), Is.EqualTo(0x00));
-        Assert.That(tested.ReadByte(), Is.EqualTo(0x01));
-        Assert.That(tested.ReadByte(), Is.EqualTo(0x02));
-        Assert.That(tested.ReadByte(), Is.EqualTo(0x03));
-    }
-
-    [SetUp]
-    public void Setup()
+    public TftpStreamReader_Test()
     {
         var ms = new MemoryStream(data);
         tested = new TftpStreamReader(ms);
     }
 
-    [TearDown]
-    public void TearDown()
+    [Fact]
+    public void ReadsIntoArraysWithPerfectSize()
     {
-        tested.Dispose();
+        var expected = new byte[] { 0x00, 0x01, 0x02, 0x03 };
+        byte[] actual = tested.ReadBytes(4);
+
+        actual.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
+    public void ReadsIntoLargerArrays()
+    {
+        var expected = new byte[] { 0x00, 0x01, 0x02, 0x03 };
+        byte[] actual = tested.ReadBytes(4);
+
+        actual.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
+    public void ReadsIntoSmallerArrays()
+    {
+        var expected = new byte[] { 0x00, 0x01 };
+        byte[] actual = tested.ReadBytes(2);
+
+        actual.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
+    public void ReadsShorts()
+    {
+        ushort expected1 = 0x0001;
+        ushort expected2 = 0x0203;
+
+        var actual1 = tested.ReadUInt16();
+        var actual2 = tested.ReadUInt16();
+
+        actual1.Should().Be(expected1);
+        actual2.Should().Be(expected2);
+    }
+
+    [Fact]
+    public void ReadsSingleBytes()
+    {
+        byte expected1 = 0x00;
+        byte expected2 = 0x01;
+        byte expected3 = 0x02;
+        byte expected4 = 0x03;
+
+        var actual1 = tested.ReadByte();
+        var actual2 = tested.ReadByte();
+        var actual3 = tested.ReadByte();
+        var actual4 = tested.ReadByte();
+
+        actual1.Should().Be(expected1);
+        actual2.Should().Be(expected2);
+        actual3.Should().Be(expected3);
+        actual4.Should().Be(expected4);
     }
 }

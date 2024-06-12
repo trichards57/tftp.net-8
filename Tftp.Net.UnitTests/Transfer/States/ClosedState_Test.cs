@@ -2,41 +2,34 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using NUnit.Framework;
 using Tftp.Net.Transfer.States;
+using Xunit;
 
 namespace Tftp.Net.UnitTests;
 
-[TestFixture]
-internal class ClosedState_Test
+public class ClosedState_Test
 {
-    private TransferStub transfer;
+    private readonly TransferStub transfer;
 
-    [Test]
-    public void CanNotCancel()
-    {
-        transfer.Cancel(TftpErrorPacket.IllegalOperation);
-        Assert.That(transfer.State, Is.InstanceOf<Closed>());
-    }
-
-    [Test]
-    public void IgnoresCommands()
-    {
-        transfer.OnCommand(new Error { ErrorCode = 10, Message = "Test" });
-        Assert.That(transfer.State, Is.InstanceOf<Closed>());
-    }
-
-    [SetUp]
-    public void Setup()
+    public ClosedState_Test()
     {
         transfer = new TransferStub();
         transfer.SetState(new Closed(NullLogger.Instance));
     }
 
-    [TearDown]
-    public void Teardown()
+    [Fact]
+    public void CanNotCancel()
     {
-        transfer.Dispose();
+        transfer.Cancel(TftpErrorPacket.IllegalOperation);
+        transfer.State.Should().BeOfType<Closed>();
+    }
+
+    [Fact]
+    public void IgnoresCommands()
+    {
+        transfer.OnCommand(new Error { ErrorCode = 10, Message = "Test" });
+        transfer.State.Should().BeOfType<Closed>();
     }
 }
