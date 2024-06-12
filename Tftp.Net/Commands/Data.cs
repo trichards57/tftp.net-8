@@ -4,19 +4,19 @@
 
 namespace Tftp.Net;
 
-internal class Data(ushort blockNumber, byte[] data) : ITftpCommand
+internal readonly record struct Data : ITftpCommand
 {
     public const ushort OpCode = 3;
 
-    public ushort BlockNumber { get; private set; } = blockNumber;
+    public ushort BlockNumber { get; init; }
 
-    public byte[] Bytes { get; private set; } = data;
+    public byte[] Bytes { get; init; }
 
     public static Data ReadFromStream(TftpStreamReader reader)
     {
         var blockNumber = reader.ReadUInt16();
         var data = reader.ReadBytes(10000);
-        return new Data(blockNumber, data);
+        return new Data { BlockNumber = blockNumber, Bytes = data };
     }
 
     public void Visit(ITftpCommandVisitor visitor)

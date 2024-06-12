@@ -1,25 +1,24 @@
-﻿    // <copyright file="Error.cs" company="Tony Richards">
+﻿// <copyright file="Error.cs" company="Tony Richards">
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using System.Collections.Generic;
 using System.Text;
 
 namespace Tftp.Net;
 
-internal class Error(ushort errorCode, string message) : ITftpCommand
+internal readonly record struct Error : ITftpCommand
 {
     public const ushort OpCode = 5;
 
-    public ushort ErrorCode { get; private set; } = errorCode;
+    public ushort ErrorCode { get; init; }
 
-    public string Message { get; private set; } = message;
+    public string Message { get; init; }
 
     public static Error ReadFromStream(TftpStreamReader reader)
     {
         var errorCode = reader.ReadUInt16();
         var message = reader.ReadNullTerminatedString();
-        return new Error(errorCode, message);
+        return new Error { ErrorCode = errorCode, Message = message };
     }
 
     public void Visit(ITftpCommandVisitor visitor)

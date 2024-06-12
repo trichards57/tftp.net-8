@@ -4,16 +4,16 @@
 
 namespace Tftp.Net;
 
-internal class Acknowledgement(ushort blockNumber) : ITftpCommand
+internal readonly record struct Acknowledgement : ITftpCommand
 {
     public const ushort OpCode = 4;
 
-    public ushort BlockNumber { get; private set; } = blockNumber;
+    public ushort BlockNumber { get; init; }
 
     public static Acknowledgement ReadFromStream(TftpStreamReader reader)
     {
         var blockNumber = reader.ReadUInt16();
-        return new Acknowledgement(blockNumber);
+        return new Acknowledgement { BlockNumber = blockNumber };
     }
 
     public void Visit(ITftpCommandVisitor visitor)

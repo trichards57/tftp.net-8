@@ -7,16 +7,16 @@ using System.Text;
 
 namespace Tftp.Net;
 
-internal class OptionAcknowledgement(IEnumerable<TransferOption> options) : ITftpCommand
+internal readonly record struct OptionAcknowledgement : ITftpCommand
 {
     public const ushort OpCode = 6;
 
-    public IEnumerable<TransferOption> Options { get; } = options;
+    public IEnumerable<TransferOption> Options { get; init; }
 
     public static OptionAcknowledgement ReadFromStream(TftpStreamReader reader)
     {
         var options = TransferOptionParser.Parse(reader);
-        return new OptionAcknowledgement(options);
+        return new OptionAcknowledgement { Options = options };
     }
 
     public void Visit(ITftpCommandVisitor visitor)
