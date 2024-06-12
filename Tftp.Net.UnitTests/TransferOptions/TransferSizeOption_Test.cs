@@ -1,43 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="TransferSizeOption_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
 using Tftp.Net.Transfer;
-using System.IO;
 
-namespace Tftp.Net.UnitTests.TransferOptions
+namespace Tftp.Net.UnitTests.TransferOptions;
+
+[TestFixture]
+internal class TransferSizeOption_Test
 {
-    [TestFixture]
-    class TransferSizeOption_Test
+    private TransferOptionSet options;
+
+    [Test]
+    public void ReadsTransferSize()
     {
-        private TransferOptionSet options;
-
-        [Test]
-        public void ReadsTransferSize()
+        Parse(new TransferOption("tsize", "0"));
+        Assert.Multiple(() =>
         {
-            Parse(new TransferOption("tsize", "0"));
-            Assert.IsTrue(options.IncludesTransferSizeOption);
-            Assert.AreEqual(0, options.TransferSize);
-        }
+            Assert.That(options.IncludesTransferSizeOption, Is.True);
+            Assert.That(options.TransferSize, Is.EqualTo(0));
+        });
+    }
 
-        [Test]
-        public void RejectsNegativeTransferSize()
-        {
-            Parse(new TransferOption("tsize", "-1"));
-            Assert.IsFalse(options.IncludesTransferSizeOption);
-        }
+    [Test]
+    public void RejectsNegativeTransferSize()
+    {
+        Parse(new TransferOption("tsize", "-1"));
+        Assert.That(options.IncludesTransferSizeOption, Is.False);
+    }
 
-        [Test]
-        public void RejectsNonIntegerTransferSize()
-        {
-            Parse(new TransferOption("tsize", "abc"));
-            Assert.IsFalse(options.IncludesTransferSizeOption);
-        }
+    [Test]
+    public void RejectsNonIntegerTransferSize()
+    {
+        Parse(new TransferOption("tsize", "abc"));
+        Assert.That(options.IncludesTransferSizeOption, Is.False);
+    }
 
-        private void Parse(TransferOption option)
-        {
-            options = new TransferOptionSet(new TransferOption[] { option });
-        }
+    private void Parse(TransferOption option)
+    {
+        options = new TransferOptionSet([option]);
     }
 }

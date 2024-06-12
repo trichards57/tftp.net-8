@@ -1,78 +1,77 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using Tftp.Net.Trace;
+﻿// <copyright file="Sending.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-namespace Tftp.Net.Transfer.States
+using System;
+
+namespace Tftp.Net.Transfer.States;
+
+internal class Sending : StateThatExpectsMessagesFromDefaultEndPoint
 {
-    class Sending : StateThatExpectsMessagesFromDefaultEndPoint
+    private long bytesSent = 0;
+    private ushort lastBlockNumber;
+    private byte[] lastData;
+    private bool lastPacketWasSent = false;
+
+    public override void OnAcknowledgement(Acknowledgement command)
     {
-        private byte[] lastData;
-        private ushort lastBlockNumber;
-        private long bytesSent = 0;
-        private bool lastPacketWasSent = false;
-
-        public override void OnStateEnter()
+        // Drop acknowledgments for other packets than the previous one
+        if (command.BlockNumber != lastBlockNumber)
         {
-            base.OnStateEnter();
-            lastData = new byte[Context.BlockSize];
- 	        SendNextPacket(1);
+            return;
         }
 
-        public override void OnAcknowledgement(Acknowledgement command)
+        // Notify our observers about our progress
+        bytesSent += lastData.Length;
+        Context.RaiseOnProgress(bytesSent);
+
+        if (lastPacketWasSent)
         {
-            //Drop acknowledgments for other packets than the previous one
-            if (command.BlockNumber != lastBlockNumber)
-                return;
+            // We're done here
+            Context.RaiseOnFinished();
+            Context.SetState(new Closed());
+        }
+        else
+        {
+            SendNextPacket(Context.BlockCounterWrapping.CalculateNextBlockNumber(lastBlockNumber));
+        }
+    }
 
-            //Notify our observers about our progress
-            bytesSent += lastData.Length;
-            Context.RaiseOnProgress(bytesSent);
+    public override void OnCancel(TftpErrorPacket reason)
+    {
+        Context.SetState(new CancelledByUser(reason));
+    }
 
-            if (lastPacketWasSent)
-            {
-                //We're done here
-                Context.RaiseOnFinished();
-                Context.SetState(new Closed());
-            }
-            else
-            {
-                SendNextPacket(Context.BlockCounterWrapping.CalculateNextBlockNumber(lastBlockNumber));
-            }
+    public override void OnError(Error command)
+    {
+        Context.SetState(new ReceivedError(command));
+    }
+
+    public override void OnStateEnter()
+    {
+        base.OnStateEnter();
+        lastData = new byte[Context.BlockSize];
+        SendNextPacket(1);
+    }
+
+    private void SendNextPacket(ushort blockNumber)
+    {
+        if (Context.InputOutputStream == null)
+        {
+            return;
         }
 
-        public override void OnError(Error command)
+        int packetLength = Context.InputOutputStream.Read(lastData, 0, lastData.Length);
+        lastBlockNumber = blockNumber;
+
+        if (packetLength != lastData.Length)
         {
-            Context.SetState(new ReceivedError(command));
+            // This means we just sent the last packet
+            lastPacketWasSent = true;
+            Array.Resize(ref lastData, packetLength);
         }
 
-        public override void OnCancel(TftpErrorPacket reason)
-        {
-            Context.SetState(new CancelledByUser(reason));
-        }
-
-        #region Helper Methods
-        private void SendNextPacket(ushort blockNumber)
-        {
-            if (Context.InputOutputStream == null)
-                return;
-
-            int packetLength = Context.InputOutputStream.Read(lastData, 0, lastData.Length);
-            lastBlockNumber = blockNumber;
-
-            if (packetLength != lastData.Length)
-            {
-                //This means we just sent the last packet
-                lastPacketWasSent = true;
-                Array.Resize(ref lastData, packetLength);
-            }
-
-            ITftpCommand dataCommand = new Data(blockNumber, lastData);
-            SendAndRepeat(dataCommand);
-        }
-
-        #endregion
+        ITftpCommand dataCommand = new Data(blockNumber, lastData);
+        SendAndRepeat(dataCommand);
     }
 }

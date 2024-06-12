@@ -1,32 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="SimpleTimer.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-namespace Tftp.Net.Transfer
+using System;
+
+namespace Tftp.Net.Transfer;
+
+/// <summary>
+/// Simple implementation of a timer.
+/// </summary>
+internal class SimpleTimer
 {
-    /// <summary>
-    /// Simple implementation of a timer.
-    /// </summary>
-    class SimpleTimer
+    private readonly TimeSpan timeout;
+    private DateTime nextTimeout;
+
+    public SimpleTimer(TimeSpan timeout)
     {
-        private DateTime nextTimeout;
-        private readonly TimeSpan timeout;
+        this.timeout = timeout;
+        Restart();
+    }
 
-        public SimpleTimer(TimeSpan timeout)
-        {
-            this.timeout = timeout;
-            Restart();
-        }
+    public bool IsTimeout()
+    {
+        return DateTime.Now >= nextTimeout;
+    }
 
-        public void Restart()
-        {
-            this.nextTimeout = DateTime.Now.Add(timeout);
-        }
-
-        public bool IsTimeout()
-        {
-            return DateTime.Now >= nextTimeout;
-        }
+    public void Restart()
+    {
+        nextTimeout = DateTime.Now.Add(timeout);
     }
 }

@@ -1,32 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="ErrorFromRemoteEndpoint_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
 
-namespace Tftp.Net.UnitTests
+namespace Tftp.Net.UnitTests;
+
+[TestFixture]
+internal class ErrorFromRemoteEndpoint_Test
 {
-    [TestFixture]
-    class ErrorFromRemoteEndpoint_Test
+    [Test]
+    public void CanBeCreatedWithValidValues()
     {
-        [Test]
-        public void CanBeCreatedWithValidValues()
+        var error = new TftpErrorPacket(123, "Test Message");
+        Assert.Multiple(() =>
         {
-            TftpErrorPacket error = new TftpErrorPacket(123, "Test Message");
-            Assert.AreEqual(123, error.ErrorCode);
-            Assert.AreEqual("Test Message", error.ErrorMessage);
-        }
+            Assert.That(error.ErrorCode, Is.EqualTo(123));
+            Assert.That(error.ErrorMessage, Is.EqualTo("Test Message"));
+        });
+    }
 
-        [Test]
-        public void RejectsNullMessage()
-        {
-            Assert.Throws<ArgumentException>(() => new TftpErrorPacket(123, null));
-        }
+    [Test]
+    public void RejectsEmptyMessage()
+    {
+        Assert.That(() => new TftpErrorPacket(123, string.Empty), Throws.ArgumentException);
+    }
 
-        [Test]
-        public void RejectsEmptyMessage()
-        {
-            Assert.Throws<ArgumentException>(() => new TftpErrorPacket(123, ""));
-        }
+    [Test]
+    public void RejectsNullMessage()
+    {
+        Assert.That(() => new TftpErrorPacket(123, null), Throws.ArgumentNullException);
     }
 }

@@ -1,49 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="TransferOption_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
-using Tftp.Net.Transfer;
 
-namespace Tftp.Net.UnitTests.TransferOptions
+namespace Tftp.Net.UnitTests.TransferOptions;
+
+[TestFixture]
+internal class TransferOption_Test
 {
-    [TestFixture]
-    class TransferOption_Test
+    [Test]
+    public void AcceptsEmptyValue()
     {
-        [Test]
-        public void CanBeCreatedWithValidNameAndValue()
-        {
-            TransferOption option = new TransferOption("Test", "Hallo Welt");
-            Assert.AreEqual("Test", option.Name);
-            Assert.AreEqual("Hallo Welt", option.Value);
-            Assert.IsFalse(option.IsAcknowledged);
-        }
+        Assert.That(() => new TransferOption("Test", string.Empty), Throws.Nothing);
+    }
 
-        [Test]
-        public void RejectsInvalidName1()
+    [Test]
+    public void CanBeCreatedWithValidNameAndValue()
+    {
+        var option = new TransferOption("Test", "Hallo Welt");
+        Assert.Multiple(() =>
         {
-            Assert.Throws<ArgumentException>(() => new TransferOption("", "Hallo Welt"));
-        }
+            Assert.That(option.Name, Is.EqualTo("Test"));
+            Assert.That(option.Value, Is.EqualTo("Hallo Welt"));
+            Assert.That(option.IsAcknowledged, Is.False);
+        });
+    }
 
-        [Test]
-        public void RejectsInvalidName2()
-        {
-            Assert.Throws<ArgumentException>(() => new TransferOption(null, "Hallo Welt"));
-        }
+    [Test]
+    public void RejectsInvalidName1()
+    {
+        Assert.That(() => new TransferOption(string.Empty, "Hallo Welt"), Throws.ArgumentException);
+    }
 
-        [Test]
-        public void RejectsInvalidValue()
-        {
-            Assert.Throws<ArgumentNullException>(() => new TransferOption("Test", null));
-        }
+    [Test]
+    public void RejectsInvalidName2()
+    {
+        Assert.That(() => new TransferOption(null, "Hallo Welt"), Throws.ArgumentNullException);
+    }
 
-        [Test]
-        public void AcceptsEmptyValue()
-        {
-            //Must not throw any exceptions
-            TransferOption option = new TransferOption("Test", "");
-        }
+    [Test]
+    public void RejectsInvalidValue()
+    {
+        Assert.That(() => new TransferOption("Test", null), Throws.ArgumentNullException);
     }
 }
-
-

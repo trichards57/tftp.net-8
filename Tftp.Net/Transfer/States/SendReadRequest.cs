@@ -1,69 +1,69 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using Tftp.Net.Channel;
+﻿// <copyright file="SendReadRequest.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using System.Net;
-using Tftp.Net.Transfer;
-using Tftp.Net.Trace;
 
-namespace Tftp.Net.Transfer.States
+namespace Tftp.Net.Transfer.States;
+
+internal class SendReadRequest : StateWithNetworkTimeout
 {
-    class SendReadRequest : StateWithNetworkTimeout
+    /// <inheritdoc/>
+    public override void OnCancel(TftpErrorPacket reason)
     {
-        public override void OnStateEnter()
+        Context.SetState(new CancelledByUser(reason));
+    }
+
+    /// <inheritdoc/>
+    public override void OnCommand(ITftpCommand command, EndPoint endpoint)
+    {
+        if (command is Data || command is OptionAcknowledgement)
         {
-            base.OnStateEnter();
-            SendRequest(); //Send a read request to the server
+            // The server acknowledged our read request.
+            // Fix out remote endpoint
+            Context.GetConnection().RemoteEndpoint = endpoint;
         }
 
-        private void SendRequest()
+        if (command is Data)
         {
-            ReadRequest request = new ReadRequest(Context.Filename, Context.TransferMode, Context.ProposedOptions.ToOptionList());
-            SendAndRepeat(request);
-        }
+            if (Context.NegotiatedOptions == null)
+            {
+                Context.FinishOptionNegotiation(TransferOptionSet.NewEmptySet());
+            }
 
-        public override void OnCommand(ITftpCommand command, EndPoint endpoint)
+            // Switch to the receiving state...
+            var nextState = new Receiving();
+            Context.SetState(nextState);
+
+            // ...and let it handle the data packet
+            nextState.OnCommand(command, endpoint);
+        }
+        else if (command is OptionAcknowledgement oAck)
         {
-            if (command is Data || command is OptionAcknowledgement)
-            {
-                //The server acknowledged our read request.
-                //Fix out remote endpoint
-                Context.GetConnection().RemoteEndpoint = endpoint;
-            }
+            // Check which options were acknowledged
+            Context.FinishOptionNegotiation(new TransferOptionSet(oAck.Options));
 
-            if (command is Data)
-            {
-                if (Context.NegotiatedOptions == null)
-                    Context.FinishOptionNegotiation(TransferOptionSet.NewEmptySet());
-
-                //Switch to the receiving state...
-                ITransferState nextState = new Receiving();
-                Context.SetState(nextState);
-
-                //...and let it handle the data packet
-                nextState.OnCommand(command, endpoint);
-            }
-            else if (command is OptionAcknowledgement)
-            {
-                //Check which options were acknowledged
-                Context.FinishOptionNegotiation(new TransferOptionSet( (command as OptionAcknowledgement).Options ));
-
-                //the server acknowledged our options. Confirm the final options
-                SendAndRepeat(new Acknowledgement(0));
-            }
-            else if (command is Error)
-            {
-                Context.SetState(new ReceivedError((Error)command));
-            }
-            else
-                base.OnCommand(command, endpoint);
+            // the server acknowledged our options. Confirm the final options
+            SendAndRepeat(new Acknowledgement(0));
         }
-
-        public override void OnCancel(TftpErrorPacket reason)
+        else if (command is Error error)
         {
-            Context.SetState(new CancelledByUser(reason));
+            Context.SetState(new ReceivedError(error));
         }
+        else
+        {
+            base.OnCommand(command, endpoint);
+        }
+    }
+
+    public override void OnStateEnter()
+    {
+        base.OnStateEnter();
+        SendRequest(); // Send a read request to the server
+    }
+
+    private void SendRequest()
+    {
+        SendAndRepeat(new ReadRequest(Context.Filename, Context.TransferMode, Context.ProposedOptions.ToOptionList()));
     }
 }

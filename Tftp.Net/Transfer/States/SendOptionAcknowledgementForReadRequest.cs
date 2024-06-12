@@ -1,20 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Tftp.Net.Transfer.States;
+﻿// <copyright file="SendOptionAcknowledgementForReadRequest.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-namespace Tftp.Net.Transfer.States
+namespace Tftp.Net.Transfer.States;
+
+internal class SendOptionAcknowledgementForReadRequest : SendOptionAcknowledgementBase
 {
-    class SendOptionAcknowledgementForReadRequest : SendOptionAcknowledgementBase
+    public override void OnAcknowledgement(Acknowledgement command)
     {
-        public override void OnAcknowledgement(Acknowledgement command)
+        if (command.BlockNumber == 0)
         {
-            if (command.BlockNumber == 0)
-            {
-                //We received an OACK, so let's get going ;)
-                Context.SetState(new Sending());
-            }
+            // We received an OACK, so let's get going ;)
+            Context.SetState(new Sending());
         }
     }
 }

@@ -1,111 +1,126 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="SendWriteRequest_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
-using Tftp.Net.Transfer.States;
+using System;
 using System.IO;
-using Tftp.Net.Transfer;
+using Tftp.Net.Transfer.States;
 
-namespace Tftp.Net.UnitTests
+namespace Tftp.Net.UnitTests;
+
+[TestFixture]
+internal class SendWriteRequest_Test
 {
-    [TestFixture]
-    class SendWriteRequest_Test
+    private TransferStub transfer;
+
+    [SetUp]
+    public void Setup()
     {
-        private TransferStub transfer;
+        transfer = new TransferStub(new MemoryStream(new byte[5000]));
+        transfer.SetState(new SendWriteRequest());
+    }
 
-        [SetUp]
-        public void Setup()
+    [Test]
+    public void CanCancel()
+    {
+        transfer.Cancel(TftpErrorPacket.IllegalOperation);
+        Assert.Multiple(() =>
         {
-            transfer = new TransferStub(new MemoryStream(new byte[5000]));
-            transfer.SetState(new SendWriteRequest());
-        }
+            Assert.That(transfer.State, Is.InstanceOf<Closed>());
+            Assert.That(transfer.CommandWasSent(typeof(Error)), Is.True);
+        });
+    }
 
-        [Test]
-        public void CanCancel()
+    [Test]
+    public void SendsWriteRequest()
+    {
+        var tx = new TransferStub(new MemoryStream(new byte[5000]));
+        tx.SetState(new SendWriteRequest());
+        Assert.That(tx.CommandWasSent(typeof(WriteRequest)), Is.True);
+    }
+
+    [Test]
+    public void HandlesAcknowledgement()
+    {
+        transfer.OnCommand(new Acknowledgement(0));
+        Assert.That(transfer.State, Is.InstanceOf<Sending>());
+    }
+
+    [Test]
+    public void IgnoresWrongAcknowledgement()
+    {
+        transfer.OnCommand(new Acknowledgement(5));
+        Assert.That(transfer.State, Is.InstanceOf<SendWriteRequest>());
+    }
+
+    [Test]
+    public void HandlesOptionAcknowledgement()
+    {
+        transfer.BlockSize = 999;
+        transfer.OnCommand(new OptionAcknowledgement([new TransferOption("blksize", "800")]));
+        Assert.That(transfer.BlockSize, Is.EqualTo(800));
+    }
+
+    [Test]
+    public void HandlesMissingOptionAcknowledgement()
+    {
+        transfer.BlockSize = 999;
+        transfer.OnCommand(new Acknowledgement(0));
+        Assert.That(transfer.BlockSize, Is.EqualTo(512));
+    }
+
+    [Test]
+    public void HandlesError()
+    {
+        bool onErrorWasCalled = false;
+        transfer.OnError += (t, error) => { onErrorWasCalled = true; };
+
+        Assert.That(onErrorWasCalled, Is.False);
+        transfer.OnCommand(new Error(123, "Test Error"));
+        Assert.Multiple(() =>
         {
-            transfer.Cancel(TftpErrorPacket.IllegalOperation);
-            Assert.IsInstanceOf<Closed>(transfer.State);
-            Assert.IsTrue(transfer.CommandWasSent(typeof(Error)));
-        }
+            Assert.That(onErrorWasCalled, Is.True);
 
-        [Test]
-        public void SendsWriteRequest()
+            Assert.That(transfer.State, Is.InstanceOf<Closed>());
+        });
+    }
+
+    [Test]
+    public void ResendsRequest()
+    {
+        var transferWithLowTimeout = new TransferStub(new MemoryStream())
         {
-            TransferStub transfer = new TransferStub(new MemoryStream(new byte[5000]));
-            transfer.SetState(new SendWriteRequest());
-            Assert.IsTrue(transfer.CommandWasSent(typeof(WriteRequest)));
-        }
+            RetryTimeout = new TimeSpan(0),
+        };
+        transferWithLowTimeout.SetState(new SendWriteRequest());
 
-        [Test]
-        public void HandlesAcknowledgement()
+        Assert.That(transferWithLowTimeout.CommandWasSent(typeof(WriteRequest)), Is.True);
+        transferWithLowTimeout.SentCommands.Clear();
+
+        transferWithLowTimeout.OnTimer();
+        Assert.That(transferWithLowTimeout.CommandWasSent(typeof(WriteRequest)), Is.True);
+    }
+
+    [Test]
+    public void TimeoutWhenNoAnswerIsReceivedAndRetryCountIsExceeded()
+    {
+        var transferWithLowTimeout = new TransferStub(new MemoryStream(new byte[5000]))
         {
-            transfer.OnCommand(new Acknowledgement(0));
-            Assert.IsInstanceOf<Sending>(transfer.State);
-        }
+            RetryTimeout = new TimeSpan(0),
+            RetryCount = 1,
+        };
+        transferWithLowTimeout.SetState(new SendWriteRequest());
 
-        [Test]
-        public void IgnoresWrongAcknowledgement()
-        {
-            transfer.OnCommand(new Acknowledgement(5));
-            Assert.IsInstanceOf<SendWriteRequest>(transfer.State);
-        }
+        transferWithLowTimeout.OnTimer();
+        Assert.That(transferWithLowTimeout.HadNetworkTimeout, Is.False);
+        transferWithLowTimeout.OnTimer();
+        Assert.That(transferWithLowTimeout.HadNetworkTimeout, Is.True);
+    }
 
-        [Test]
-        public void HandlesOptionAcknowledgement()
-        {
-            transfer.BlockSize = 999;
-            transfer.OnCommand(new OptionAcknowledgement(new TransferOption[] { new TransferOption("blksize", "800") }));
-            Assert.AreEqual(800, transfer.BlockSize);
-        }
-
-        [Test]
-        public void HandlesMissingOptionAcknowledgement()
-        {
-            transfer.BlockSize = 999;
-            transfer.OnCommand(new Acknowledgement(0));
-            Assert.AreEqual(512, transfer.BlockSize);
-        }
-
-        [Test]
-        public void HandlesError()
-        {
-            bool onErrorWasCalled = false;
-            transfer.OnError += delegate(ITftpTransfer t, TftpTransferError error) { onErrorWasCalled = true; };
-
-            Assert.IsFalse(onErrorWasCalled);
-            transfer.OnCommand(new Error(123, "Test Error"));
-            Assert.IsTrue(onErrorWasCalled);
-
-            Assert.IsInstanceOf<Closed>(transfer.State);
-        }
-
-        [Test]
-        public void ResendsRequest()
-        {
-            TransferStub transferWithLowTimeout = new TransferStub(new MemoryStream());
-            transferWithLowTimeout.RetryTimeout = new TimeSpan(0);
-            transferWithLowTimeout.SetState(new SendWriteRequest());
-
-            Assert.IsTrue(transferWithLowTimeout.CommandWasSent(typeof(WriteRequest)));
-            transferWithLowTimeout.SentCommands.Clear();
-
-            transferWithLowTimeout.OnTimer();
-            Assert.IsTrue(transferWithLowTimeout.CommandWasSent(typeof(WriteRequest)));
-        }
-
-        [Test]
-        public void TimeoutWhenNoAnswerIsReceivedAndRetryCountIsExceeded()
-        {
-            TransferStub transferWithLowTimeout = new TransferStub(new MemoryStream(new byte[5000]));
-            transferWithLowTimeout.RetryTimeout = new TimeSpan(0);
-            transferWithLowTimeout.RetryCount = 1;
-            transferWithLowTimeout.SetState(new SendWriteRequest());
-
-            transferWithLowTimeout.OnTimer();
-            Assert.IsFalse(transferWithLowTimeout.HadNetworkTimeout);
-            transferWithLowTimeout.OnTimer();
-            Assert.IsTrue(transferWithLowTimeout.HadNetworkTimeout);
-        }
+    [TearDown]
+    public void Teardown()
+    {
+        transfer.Dispose();
     }
 }

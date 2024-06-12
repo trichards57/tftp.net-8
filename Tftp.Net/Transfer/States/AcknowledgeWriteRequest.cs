@@ -1,34 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Tftp.Net.Trace;
+﻿// <copyright file="AcknowledgeWriteRequest.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-namespace Tftp.Net.Transfer.States
+namespace Tftp.Net.Transfer.States;
+
+internal class AcknowledgeWriteRequest : StateThatExpectsMessagesFromDefaultEndPoint
 {
-    class AcknowledgeWriteRequest : StateThatExpectsMessagesFromDefaultEndPoint
+    public override void OnCancel(TftpErrorPacket reason)
     {
-        public override void OnStateEnter()
-        {
-            base.OnStateEnter();
-            SendAndRepeat(new Acknowledgement(0));
-        }
+        Context.SetState(new CancelledByUser(reason));
+    }
 
-        public override void OnData(Data command)
-        {
-            var nextState = new Receiving();
-            Context.SetState(nextState);
-            nextState.OnCommand(command, Context.GetConnection().RemoteEndpoint);
-        }
+    public override void OnData(Data command)
+    {
+        var nextState = new Receiving();
+        Context.SetState(nextState);
+        nextState.OnCommand(command, Context.GetConnection().RemoteEndpoint);
+    }
 
-        public override void OnCancel(TftpErrorPacket reason)
-        {
-            Context.SetState(new CancelledByUser(reason));
-        }
+    public override void OnError(Error command)
+    {
+        Context.SetState(new ReceivedError(command));
+    }
 
-        public override void OnError(Error command)
-        {
-            Context.SetState(new ReceivedError(command));
-        }
+    public override void OnStateEnter()
+    {
+        base.OnStateEnter();
+        SendAndRepeat(new Acknowledgement(0));
     }
 }

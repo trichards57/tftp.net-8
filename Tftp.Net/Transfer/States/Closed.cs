@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="Closed.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-namespace Tftp.Net.Transfer.States
+namespace Tftp.Net.Transfer.States;
+
+internal class Closed : BaseState
 {
-    class Closed : BaseState
+    public override void OnStateEnter()
     {
-        public override void OnStateEnter()
-        {
-            Context.Dispose();
-        }
+        Context.Dispose();
     }
 }

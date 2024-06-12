@@ -1,24 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="CancelledByUser.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-namespace Tftp.Net.Transfer.States
+namespace Tftp.Net.Transfer.States;
+
+internal class CancelledByUser(TftpErrorPacket reason) : BaseState
 {
-    class CancelledByUser : BaseState
+    private readonly TftpErrorPacket reason = reason;
+
+    public override void OnStateEnter()
     {
-        private readonly TftpErrorPacket reason;
-
-        public CancelledByUser(TftpErrorPacket reason)
-        {
-            this.reason = reason;
-        }
-
-        public override void OnStateEnter()
-        {
-            Error command = new Error(reason.ErrorCode, reason.ErrorMessage);
-            Context.GetConnection().Send(command);
-            Context.SetState(new Closed());
-        }
+        Error command = new(reason.ErrorCode, reason.ErrorMessage);
+        Context.GetConnection().Send(command);
+        Context.SetState(new Closed());
     }
 }

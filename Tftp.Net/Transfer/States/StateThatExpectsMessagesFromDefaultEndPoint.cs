@@ -1,50 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Tftp.Net.Channel;
+﻿// <copyright file="StateThatExpectsMessagesFromDefaultEndPoint.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
 using System.Net;
 
-namespace Tftp.Net.Transfer.States
+namespace Tftp.Net.Transfer.States;
+
+internal class StateThatExpectsMessagesFromDefaultEndPoint : StateWithNetworkTimeout, ITftpCommandVisitor
 {
-    class StateThatExpectsMessagesFromDefaultEndPoint : StateWithNetworkTimeout, ITftpCommandVisitor
+    public virtual void OnAcknowledgement(Acknowledgement command)
     {
-        public override void OnCommand(ITftpCommand command, EndPoint endpoint)
-        {
-            if (!endpoint.Equals(Context.GetConnection().RemoteEndpoint))
-                throw new Exception("Received message from illegal endpoint. Actual: " + endpoint + ". Expected: " + Context.GetConnection().RemoteEndpoint);
+        throw new NotImplementedException();
+    }
 
-            command.Visit(this);
+    public override void OnCommand(ITftpCommand command, EndPoint endpoint)
+    {
+        if (!endpoint.Equals(Context.GetConnection().RemoteEndpoint))
+        {
+            throw new InvalidOperationException("Received message from illegal endpoint. Actual: " + endpoint + ". Expected: " + Context.GetConnection().RemoteEndpoint);
         }
 
-        public virtual void OnReadRequest(ReadRequest command)
-        {
-            throw new NotImplementedException();
-        }
+        command.Visit(this);
+    }
 
-        public virtual void OnWriteRequest(WriteRequest command)
-        {
-            throw new NotImplementedException();
-        }
+    public virtual void OnData(Data command)
+    {
+        throw new NotImplementedException();
+    }
 
-        public virtual void OnData(Data command)
-        {
-            throw new NotImplementedException();
-        }
+    public virtual void OnError(Error command)
+    {
+        throw new NotImplementedException();
+    }
 
-        public virtual void OnAcknowledgement(Acknowledgement command)
-        {
-            throw new NotImplementedException();
-        }
+    public virtual void OnOptionAcknowledgement(OptionAcknowledgement command)
+    {
+        throw new NotImplementedException();
+    }
 
-        public virtual void OnError(Error command)
-        {
-            throw new NotImplementedException();
-        }
+    public virtual void OnReadRequest(ReadRequest command)
+    {
+        throw new NotImplementedException();
+    }
 
-        public virtual void OnOptionAcknowledgement(OptionAcknowledgement command)
-        {
-            throw new NotImplementedException();
-        }
+    public virtual void OnWriteRequest(WriteRequest command)
+    {
+        throw new NotImplementedException();
     }
 }

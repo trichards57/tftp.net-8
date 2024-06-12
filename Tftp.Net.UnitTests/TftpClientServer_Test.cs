@@ -1,49 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="TftpClientServer_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
 using System.IO;
-using System.Threading;
 using System.Net;
+using System.Threading.Tasks;
 
-namespace Tftp.Net.UnitTests
+namespace Tftp.Net.UnitTests;
+
+[TestFixture]
+internal class TftpClientServer_Test
 {
-    [TestFixture]
-    class TftpClientServer_Test
+    private readonly byte[] demoData = [1, 2, 3];
+    private bool transferHasFinished = false;
+
+    [Test]
+    public async Task ClientsReadsFromServer()
     {
-        public byte[] DemoData = { 1, 2, 3 };
-        private bool TransferHasFinished = false;
+        using var server = new TftpServer(new IPEndPoint(IPAddress.Loopback, 69));
+        server.OnReadRequest += new TftpServerEventHandler(Server_OnReadRequest);
+        server.Start();
 
-        [Test]
-        public void ClientsReadsFromServer()
-        {
-            using (TftpServer server = new TftpServer(new IPEndPoint(IPAddress.Loopback, 69)))
-            {
-                server.OnReadRequest += new TftpServerEventHandler(server_OnReadRequest);
-                server.Start();
+        var client = new TftpClient(new IPEndPoint(IPAddress.Loopback, 69));
+        using var transfer = client.Download("Demo File");
+        var ms = new MemoryStream();
+        transfer.OnFinished += new TftpEventHandler(Transfer_OnFinished);
+        transfer.Start(ms);
 
-                TftpClient client = new TftpClient(new IPEndPoint(IPAddress.Loopback, 69));
-                using (ITftpTransfer transfer = client.Download("Demo File"))
-                {
-                    MemoryStream ms = new MemoryStream();
-                    transfer.OnFinished += new TftpEventHandler(transfer_OnFinished);
-                    transfer.Start(ms);
+        await Task.Delay(500);
+        Assert.That(transferHasFinished, Is.True);
+    }
 
-                    Thread.Sleep(500);
-                    Assert.IsTrue(TransferHasFinished);
-                }
-            }
-        }
+    private void Server_OnReadRequest(ITftpTransfer transfer, EndPoint client)
+    {
+        transfer.Start(new MemoryStream(demoData));
+    }
 
-        void transfer_OnFinished(ITftpTransfer transfer)
-        {
-            TransferHasFinished = true;
-        }
-
-        void server_OnReadRequest(ITftpTransfer transfer, EndPoint client)
-        {
-            transfer.Start(new MemoryStream(DemoData));
-        }
+    private void Transfer_OnFinished(ITftpTransfer transfer)
+    {
+        transferHasFinished = true;
     }
 }

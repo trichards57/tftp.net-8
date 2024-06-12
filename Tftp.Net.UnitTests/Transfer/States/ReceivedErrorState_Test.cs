@@ -1,49 +1,57 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="ReceivedErrorState_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
 using Tftp.Net.Transfer.States;
 
-namespace Tftp.Net.UnitTests
+namespace Tftp.Net.UnitTests;
+
+[TestFixture]
+internal class ReceivedErrorState_Test
 {
-    [TestFixture]
-    class ReceivedErrorState_Test
+    private TransferStub transfer;
+
+    [Test]
+    public void CallsOnError()
     {
-        private TransferStub transfer;
-
-        [SetUp]
-        public void Setup()
+        var onErrorWasCalled = false;
+        var tx = new TransferStub();
+        tx.OnError += (t, error) =>
         {
-            transfer = new TransferStub();
-            transfer.SetState(new ReceivedError(new TftpErrorPacket(123, "Error")));
-        }
+            onErrorWasCalled = true;
+            Assert.Multiple(() =>
+            {
+                Assert.That(t, Is.EqualTo(tx));
 
-        [Test]
-        public void CallsOnError()
-        {
-            bool OnErrorWasCalled = false;
-            TransferStub transfer = new TransferStub();
-            transfer.OnError += delegate(ITftpTransfer t, TftpTransferError error)
-            { 
-                OnErrorWasCalled = true;
-                Assert.AreEqual(transfer, t);
+                Assert.That(error, Is.InstanceOf<TftpErrorPacket>());
 
-                Assert.IsInstanceOf<TftpErrorPacket>(error);
+                Assert.That(((TftpErrorPacket)error).ErrorCode, Is.EqualTo(123));
+                Assert.That(((TftpErrorPacket)error).ErrorMessage, Is.EqualTo("My Error"));
+            });
+        };
 
-                Assert.AreEqual(123, ((TftpErrorPacket)error).ErrorCode);
-                Assert.AreEqual("My Error", ((TftpErrorPacket)error).ErrorMessage);
-            };
+        Assert.That(onErrorWasCalled, Is.False);
+        tx.SetState(new ReceivedError(new TftpErrorPacket(123, "My Error")));
+        Assert.That(onErrorWasCalled, Is.True);
+    }
 
-            Assert.IsFalse(OnErrorWasCalled);
-            transfer.SetState(new ReceivedError(new TftpErrorPacket(123, "My Error")));
-            Assert.IsTrue(OnErrorWasCalled);
-        }
+    [SetUp]
+    public void Setup()
+    {
+        transfer = new TransferStub();
+        transfer.SetState(new ReceivedError(new TftpErrorPacket(123, "Error")));
+    }
 
-        [Test]
-        public void TransitionsToClosed()
-        {
-            Assert.IsInstanceOf<Closed>(transfer.State);
-        }
+    [TearDown]
+    public void Teardown()
+    {
+        transfer.Dispose();
+    }
+
+    [Test]
+    public void TransitionsToClosed()
+    {
+        Assert.That(transfer.State, Is.InstanceOf<Closed>());
     }
 }

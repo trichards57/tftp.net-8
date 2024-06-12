@@ -1,93 +1,74 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="TftpClient.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
 using System.Net;
 using System.Net.Sockets;
 using Tftp.Net.Channel;
-using Tftp.Net.Transfer.States;
 using Tftp.Net.Transfer;
 
-namespace Tftp.Net
+namespace Tftp.Net;
+
+/// <summary>
+/// A TFTP client that can connect to a TFTP server.
+/// </summary>
+public class TftpClient
 {
+    private const int DefaultServerPort = 69;
+    private readonly IPEndPoint remoteAddress;
+
     /// <summary>
-    /// A TFTP client that can connect to a TFTP server.
+    /// Initializes a new instance of the <see cref="TftpClient"/> class.
     /// </summary>
-    public class TftpClient
+    /// <param name="remoteAddress">Address of the server that you would like to connect to.</param>
+    public TftpClient(IPEndPoint remoteAddress)
     {
-        private const int DEFAULT_SERVER_PORT = 69;
-        private readonly IPEndPoint remoteAddress;
+        this.remoteAddress = remoteAddress;
+    }
 
-        /// <summary>
-        /// Default constructor.
-        /// </summary>
-        /// <param name="remoteAddress">Address of the server that you would like to connect to.</param>
-        public TftpClient(IPEndPoint remoteAddress)
-        {
-            this.remoteAddress = remoteAddress;
-        }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TftpClient"/> class.
+    /// </summary>
+    /// <param name="ip">Address of the server that you want connect to.</param>
+    /// <param name="port">Port on the server that you want connect to.</param>
+    public TftpClient(IPAddress ip, int port = DefaultServerPort)
+        : this(new IPEndPoint(ip, port))
+    {
+    }
 
-        /// <summary>
-        /// Connects to a server
-        /// </summary>
-        /// <param name="ip">Address of the server that you want connect to.</param>
-        /// <param name="port">Port on the server that you want connect to (default: 69)</param>
-        public TftpClient(IPAddress ip, int port)
-            : this(new IPEndPoint(ip, port)) 
-        { 
-        }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TftpClient"/> class.
+    /// </summary>
+    /// <param name="host">Hostname or IP to connect to.</param>
+    /// <param name="port">Port to connect to.</param>
+    public TftpClient(string host, int port = DefaultServerPort)
+    {
+        IPAddress ip = Array.Find(Dns.GetHostAddresses(host), x => x.AddressFamily == AddressFamily.InterNetwork) ?? throw new ArgumentException("Could not convert '" + host + "' to an IPv4 address.", nameof(host));
+        remoteAddress = new IPEndPoint(ip, port);
+    }
 
-        /// <summary>
-        /// Connects to a server on port 69.
-        /// </summary>
-        /// <param name="ip">Address of the server that you want connect to.</param>
-        public TftpClient(IPAddress ip)
-            : this(new IPEndPoint(ip, DEFAULT_SERVER_PORT))
-        {
-        }
+    /// <summary>
+    /// GET a file from the server.
+    /// You have to call Start() on the returned ITftpTransfer to start the transfer.
+    /// </summary>
+    /// <param name="filename">The filename to download.</param>
+    /// <returns>The read transfer.</returns>
+    public ITftpTransfer Download(string filename)
+    {
+        ITransferChannel channel = TransferChannelFactory.CreateConnection(remoteAddress);
+        return new RemoteReadTransfer(channel, filename);
+    }
 
-        /// <summary>
-        /// Connect to a server by hostname.
-        /// </summary>
-        /// <param name="host">Hostname or ip to connect to</param>
-        public TftpClient(String host)
-            : this(host, DEFAULT_SERVER_PORT)
-        {
-        }
-
-        /// <summary>
-        /// Connect to a server by hostname and port .
-        /// </summary>
-        /// <param name="host">Hostname or ip to connect to</param>
-        /// <param name="port">Port to connect to</param>
-        public TftpClient(String host, int port)
-        {
-            IPAddress ip = Dns.GetHostAddresses(host).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
-
-            if (ip == null)
-                throw new ArgumentException("Could not convert '" + host + "' to an IPv4 address.", "host");
-
-            this.remoteAddress = new IPEndPoint(ip, port);
-        }
-
-        /// <summary>
-        /// GET a file from the server.
-        /// You have to call Start() on the returned ITftpTransfer to start the transfer.
-        /// </summary>
-        public ITftpTransfer Download(String filename)
-        {
-            ITransferChannel channel = TransferChannelFactory.CreateConnection(remoteAddress);
-            return new RemoteReadTransfer(channel, filename);
-        }
-
-        /// <summary>
-        /// PUT a file from the server.
-        /// You have to call Start() on the returned ITftpTransfer to start the transfer.
-        /// </summary>
-        public ITftpTransfer Upload(String filename)
-        {
-            ITransferChannel channel = TransferChannelFactory.CreateConnection(remoteAddress);
-            return new RemoteWriteTransfer(channel, filename);
-        }
+    /// <summary>
+    /// PUT a file from the server.
+    /// You have to call Start() on the returned ITftpTransfer to start the transfer.
+    /// </summary>
+    /// <param name="filename">The filename to download.</param>
+    /// <returns>The write transfer.</returns>
+    public ITftpTransfer Upload(string filename)
+    {
+        ITransferChannel channel = TransferChannelFactory.CreateConnection(remoteAddress);
+        return new RemoteWriteTransfer(channel, filename);
     }
 }

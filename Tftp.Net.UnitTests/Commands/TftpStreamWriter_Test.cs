@@ -1,61 +1,68 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="TftpStreamWriter_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
 using System.IO;
 
-namespace Tftp.Net.UnitTests
+namespace Tftp.Net.UnitTests;
+
+[TestFixture]
+internal class TftpStreamWriter_Test
 {
-    [TestFixture]
-    class TftpStreamWriter_Test
+    private MemoryStream ms;
+    private TftpStreamWriter tested;
+
+    [SetUp]
+    public void Setup()
     {
-        private MemoryStream ms;
-        private TftpStreamWriter tested;
+        ms = new MemoryStream();
+        tested = new TftpStreamWriter(ms);
+    }
 
-        [SetUp]
-        public void Setup()
+    [Test]
+    public void WritesArrays()
+    {
+        tested.WriteBytes([3, 4, 5]);
+
+        Assert.That(ms.Length, Is.EqualTo(3));
+        Assert.Multiple(() =>
         {
-            ms = new MemoryStream();
-            tested = new TftpStreamWriter(ms);
-        }
+            Assert.That(ms.GetBuffer()[0], Is.EqualTo(3));
+            Assert.That(ms.GetBuffer()[1], Is.EqualTo(4));
+            Assert.That(ms.GetBuffer()[2], Is.EqualTo(5));
+        });
+    }
 
-        [Test]
-        public void WritesSingleBytes()
+    [Test]
+    public void WritesShorts()
+    {
+        tested.WriteUInt16(0x0102);
+        tested.WriteUInt16(0x0304);
+
+        Assert.That(ms.Length, Is.EqualTo(4));
+        Assert.Multiple(() =>
         {
-            tested.WriteByte(1);
-            tested.WriteByte(2);
-            tested.WriteByte(3);
+            Assert.That(ms.GetBuffer()[0], Is.EqualTo(1));
+            Assert.That(ms.GetBuffer()[1], Is.EqualTo(2));
+            Assert.That(ms.GetBuffer()[2], Is.EqualTo(3));
+            Assert.That(ms.GetBuffer()[3], Is.EqualTo(4));
+        });
+    }
 
-            Assert.AreEqual(3, ms.Length);
-            Assert.AreEqual(1, ms.GetBuffer()[0]);
-            Assert.AreEqual(2, ms.GetBuffer()[1]);
-            Assert.AreEqual(3, ms.GetBuffer()[2]);
-        }
+    [Test]
+    public void WritesSingleBytes()
+    {
+        tested.WriteByte(1);
+        tested.WriteByte(2);
+        tested.WriteByte(3);
 
-        [Test]
-        public void WritesShorts()
+        Assert.That(ms.Length, Is.EqualTo(3));
+        Assert.Multiple(() =>
         {
-            tested.WriteUInt16(0x0102);
-            tested.WriteUInt16(0x0304);
-
-            Assert.AreEqual(4, ms.Length);
-            Assert.AreEqual(1, ms.GetBuffer()[0]);
-            Assert.AreEqual(2, ms.GetBuffer()[1]);
-            Assert.AreEqual(3, ms.GetBuffer()[2]);
-            Assert.AreEqual(4, ms.GetBuffer()[3]);
-        }
-
-        [Test]
-        public void WritesArrays()
-        {
-            tested.WriteBytes(new byte[3] { 3, 4, 5 });
-
-            Assert.AreEqual(3, ms.Length);
-            Assert.AreEqual(3, ms.GetBuffer()[0]);
-            Assert.AreEqual(4, ms.GetBuffer()[1]);
-            Assert.AreEqual(5, ms.GetBuffer()[2]);
-        }
+            Assert.That(ms.GetBuffer()[0], Is.EqualTo(1));
+            Assert.That(ms.GetBuffer()[1], Is.EqualTo(2));
+            Assert.That(ms.GetBuffer()[2], Is.EqualTo(3));
+        });
     }
 }
-

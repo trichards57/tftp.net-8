@@ -1,22 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="ITransferChannel.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
 using System.Net;
 
-namespace Tftp.Net.Channel
+namespace Tftp.Net.Channel;
+
+internal delegate void TftpChannelErrorHandler(ITftpTransferError error);
+
+internal delegate void TftpCommandHandler(ITftpCommand command, EndPoint endpoint);
+
+internal interface ITransferChannel : IDisposable
 {
-    delegate void TftpCommandHandler(ITftpCommand command, EndPoint endpoint);
-    delegate void TftpChannelErrorHandler(TftpTransferError error);
+    event TftpCommandHandler OnCommandReceived;
 
-    interface ITransferChannel : IDisposable
-    {
-        event TftpCommandHandler OnCommandReceived;
-        event TftpChannelErrorHandler OnError;
+    event TftpChannelErrorHandler OnError;
 
-        EndPoint RemoteEndpoint { get; set; }
+    EndPoint RemoteEndpoint { get; set; }
 
-        void Open();
-        void Send(ITftpCommand command);
-    }
+    void Open();
+
+    void Send(ITftpCommand command);
 }

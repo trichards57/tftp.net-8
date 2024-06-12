@@ -1,64 +1,71 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="StartIncomingWriteState_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
-using Tftp.Net.Transfer.States;
+using System;
 using System.IO;
-using Tftp.Net.Transfer;
+using System.Linq;
+using Tftp.Net.Transfer.States;
 
-namespace Tftp.Net.UnitTests.Transfer.States
+namespace Tftp.Net.UnitTests.Transfer.States;
+
+[TestFixture]
+internal class StartIncomingWriteState_Test
 {
-    [TestFixture]
-    class StartIncomingWriteState_Test
+    private TransferStub transfer;
+
+    [Test]
+    public void CanCancel()
     {
-        private TransferStub transfer;
-
-        [SetUp]
-        public void Setup()
+        transfer.Cancel(TftpErrorPacket.IllegalOperation);
+        Assert.Multiple(() =>
         {
-            transfer = new TransferStub();
-            transfer.SetState(new StartIncomingWrite(new TransferOption[0]));
-        }
+            Assert.That(transfer.CommandWasSent(typeof(Error)), Is.True);
+            Assert.That(transfer.State, Is.InstanceOf<Closed>());
+        });
+    }
 
-        [TearDown]
-        public void Teardown()
+    [Test]
+    public void CanStartWithOptions()
+    {
+        transfer.SetState(new StartIncomingWrite([new TransferOption("blksize", "999")]));
+        Assert.That(transfer.BlockSize, Is.EqualTo(999));
+        transfer.Start(new MemoryStream(new byte[50000]));
+        OptionAcknowledgement cmd = (OptionAcknowledgement)transfer.SentCommands[^1];
+        cmd.Options.Contains(new TransferOption("blksize", "999"));
+        Assert.That(transfer.State, Is.InstanceOf<SendOptionAcknowledgementForWriteRequest>());
+    }
+
+    [Test]
+    public void CanStartWithoutOptions()
+    {
+        transfer.Start(new MemoryStream(new byte[50000]));
+
+        Assert.Multiple(() =>
         {
-        }
+            Assert.That(transfer.CommandWasSent(typeof(Acknowledgement)), Is.True);
+            Assert.That(transfer.State, Is.InstanceOf<AcknowledgeWriteRequest>());
+        });
+    }
 
-        [Test]
-        public void CanCancel()
-        {
-            transfer.Cancel(TftpErrorPacket.IllegalOperation);
-            Assert.IsTrue(transfer.CommandWasSent(typeof(Error)));
-            Assert.IsInstanceOf<Closed>(transfer.State);
-        }
+    [Test]
+    public void IgnoresCommands()
+    {
+        transfer.OnCommand(new Error(5, "Hallo Welt"));
+        Assert.That(transfer.State, Is.InstanceOf<StartIncomingWrite>());
+    }
 
-        [Test]
-        public void IgnoresCommands()
-        {
-            transfer.OnCommand(new Error(5, "Hallo Welt"));
-            Assert.IsInstanceOf<StartIncomingWrite>(transfer.State);
-        }
+    [SetUp]
+    public void Setup()
+    {
+        transfer = new TransferStub();
+        transfer.SetState(new StartIncomingWrite([]));
+    }
 
-        [Test]
-        public void CanStartWithoutOptions()
-        {
-            transfer.Start(new MemoryStream(new byte[50000]));
-
-            Assert.IsTrue(transfer.CommandWasSent(typeof(Acknowledgement)));
-            Assert.IsInstanceOf<AcknowledgeWriteRequest>(transfer.State);
-        }
-
-        [Test]
-        public void CanStartWithOptions()
-        {
-            transfer.SetState(new StartIncomingWrite(new TransferOption[] { new TransferOption("blksize", "999") }));
-            Assert.AreEqual(999, transfer.BlockSize);
-            transfer.Start(new MemoryStream(new byte[50000]));
-            OptionAcknowledgement cmd = (OptionAcknowledgement)transfer.SentCommands.Last();
-            cmd.Options.Contains(new TransferOption("blksize", "999"));
-            Assert.IsInstanceOf<SendOptionAcknowledgementForWriteRequest>(transfer.State);
-        }
+    [TearDown]
+    public void Teardown()
+    {
+        transfer.Dispose();
     }
 }

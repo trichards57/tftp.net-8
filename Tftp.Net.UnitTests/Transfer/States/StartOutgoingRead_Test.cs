@@ -1,45 +1,53 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="StartOutgoingRead_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
-using Tftp.Net.Transfer.States;
 using System.IO;
+using Tftp.Net.Transfer.States;
 
-namespace Tftp.Net.UnitTests
+namespace Tftp.Net.UnitTests;
+
+[TestFixture]
+internal class StartOutgoingRead_Test
 {
-    [TestFixture]
-    class StartOutgoingRead_Test
+    private TransferStub transfer;
+
+    [TearDown]
+    public void Teardown()
     {
-        private TransferStub transfer;
+        transfer.Dispose();
+    }
 
-        [SetUp]
-        public void Setup()
-        {
-            transfer = new TransferStub();
-            transfer.SetState(new StartOutgoingRead());
-        }
+    [SetUp]
+    public void Setup()
+    {
+        transfer = new TransferStub();
+        transfer.SetState(new StartOutgoingRead());
+    }
 
-        [Test]
-        public void CanCancel()
-        {
-            transfer.Cancel(TftpErrorPacket.IllegalOperation);
-            Assert.IsInstanceOf<Closed>(transfer.State);
-        }
+    [Test]
+    public void CanCancel()
+    {
+        transfer.Cancel(TftpErrorPacket.IllegalOperation);
+        Assert.That(transfer.State, Is.InstanceOf<Closed>());
+    }
 
-        [Test]
-        public void IgnoresCommands()
-        {
-            transfer.OnCommand(new Error(5, "Hallo Welt"));
-            Assert.IsInstanceOf<StartOutgoingRead>(transfer.State);
-        }
+    [Test]
+    public void IgnoresCommands()
+    {
+        transfer.OnCommand(new Error(5, "Hallo Welt"));
+        Assert.That(transfer.State, Is.InstanceOf<StartOutgoingRead>());
+    }
 
-        [Test]
-        public void CanStart()
+    [Test]
+    public void CanStart()
+    {
+        transfer.Start(new MemoryStream());
+        Assert.Multiple(() =>
         {
-            transfer.Start(new MemoryStream());
-            Assert.IsTrue(transfer.CommandWasSent(typeof(ReadRequest)));
-            Assert.IsInstanceOf<SendReadRequest>(transfer.State);
-        }
+            Assert.That(transfer.CommandWasSent(typeof(ReadRequest)), Is.True);
+            Assert.That(transfer.State, Is.InstanceOf<SendReadRequest>());
+        });
     }
 }

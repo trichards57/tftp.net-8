@@ -1,64 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using Tftp.Net.Transfer;
-using Tftp.Net.Trace;
+﻿// <copyright file="SendWriteRequest.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-namespace Tftp.Net.Transfer.States
+namespace Tftp.Net.Transfer.States;
+
+internal class SendWriteRequest : StateWithNetworkTimeout
 {
-    class SendWriteRequest : StateWithNetworkTimeout
+    /// <inheritdoc/>
+    public override void OnCancel(TftpErrorPacket reason)
     {
-        public override void OnStateEnter()
-        {
-            base.OnStateEnter();
-            SendRequest();
-        }
+        Context.SetState(new CancelledByUser(reason));
+    }
 
-        private void SendRequest()
+    /// <inheritdoc/>
+    public override void OnCommand(ITftpCommand command, System.Net.EndPoint endpoint)
+    {
+        if (command is OptionAcknowledgement)
         {
-            WriteRequest request = new WriteRequest(Context.Filename, Context.TransferMode, Context.ProposedOptions.ToOptionList());
-            SendAndRepeat(request);
+            var acknowledged = new TransferOptionSet((command as OptionAcknowledgement).Options);
+            Context.FinishOptionNegotiation(acknowledged);
+            BeginSendingTo(endpoint);
         }
-
-        public override void OnCommand(ITftpCommand command, System.Net.EndPoint endpoint)
+        else if (command is Acknowledgement ack && ack.BlockNumber == 0)
         {
-            if (command is OptionAcknowledgement)
-            {
-                TransferOptionSet acknowledged = new TransferOptionSet((command as OptionAcknowledgement).Options);
-                Context.FinishOptionNegotiation(acknowledged);
-                BeginSendingTo(endpoint);
-            }
-            else
-            if (command is Acknowledgement && (command as Acknowledgement).BlockNumber == 0)
-            {
-                Context.FinishOptionNegotiation(TransferOptionSet.NewEmptySet());
-                BeginSendingTo(endpoint);
-            }
-            else
-            if (command is Error)
-            {
-                //The server denied our request
-                Error error = (Error)command;
-                Context.SetState(new ReceivedError(error));
-            }
-            else
-                base.OnCommand(command, endpoint);
+            Context.FinishOptionNegotiation(TransferOptionSet.NewEmptySet());
+            BeginSendingTo(endpoint);
         }
-
-        private void BeginSendingTo(System.Net.EndPoint endpoint)
+        else if (command is Error error)
         {
-            //Switch to the endpoint that we received from the server
-            Context.GetConnection().RemoteEndpoint = endpoint;
-
-            //Start sending packets
-            Context.SetState(new Sending());
+            // The server denied our request
+            Context.SetState(new ReceivedError(error));
         }
-
-        public override void OnCancel(TftpErrorPacket reason)
+        else
         {
-            Context.SetState(new CancelledByUser(reason));
+            base.OnCommand(command, endpoint);
         }
+    }
+
+    /// <inheritdoc/>
+    public override void OnStateEnter()
+    {
+        base.OnStateEnter();
+        SendRequest();
+    }
+
+    private void BeginSendingTo(System.Net.EndPoint endpoint)
+    {
+        // Switch to the endpoint that we received from the server
+        Context.GetConnection().RemoteEndpoint = endpoint;
+
+        // Start sending packets
+        Context.SetState(new Sending());
+    }
+
+    private void SendRequest()
+    {
+        var request = new WriteRequest(Context.Filename, Context.TransferMode, Context.ProposedOptions.ToOptionList());
+        SendAndRepeat(request);
     }
 }

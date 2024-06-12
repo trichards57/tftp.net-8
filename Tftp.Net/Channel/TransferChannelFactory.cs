@@ -1,45 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="TransferChannelFactory.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Tftp.Net.Channel
+namespace Tftp.Net.Channel;
+
+internal static class TransferChannelFactory
 {
-    static class TransferChannelFactory
+    public static ITransferChannel CreateConnection(EndPoint remoteAddress)
     {
-        public static ITransferChannel CreateServer(EndPoint localAddress)
+        if (remoteAddress is IPEndPoint address)
         {
-            if (localAddress is IPEndPoint)
-                return CreateServerUdp((IPEndPoint)localAddress);
-
-            throw new NotSupportedException("Unsupported endpoint type.");
+            return CreateConnectionUdp(address);
         }
 
-        public static ITransferChannel CreateConnection(EndPoint remoteAddress)
-        {
-            if (remoteAddress is IPEndPoint)
-                return CreateConnectionUdp((IPEndPoint)remoteAddress);
+        throw new NotSupportedException("Unsupported endpoint type.");
+    }
 
-            throw new NotSupportedException("Unsupported endpoint type.");
+    public static ITransferChannel CreateServer(EndPoint localAddress)
+    {
+        if (localAddress is IPEndPoint address)
+        {
+            return CreateServerUdp(address);
         }
 
-        #region UDP connections
+        throw new NotSupportedException("Unsupported endpoint type.");
+    }
 
-        private static ITransferChannel CreateServerUdp(IPEndPoint localAddress)
+    private static UdpChannel CreateConnectionUdp(IPEndPoint remoteAddress)
+    {
+        return new UdpChannel(new UdpClient(new IPEndPoint(IPAddress.Any, 0)))
         {
-            UdpClient socket = new UdpClient(localAddress);
-            return new UdpChannel(socket);
-        }
+            RemoteEndpoint = remoteAddress,
+        };
+    }
 
-        private static ITransferChannel CreateConnectionUdp(IPEndPoint remoteAddress)
-        {
-            IPEndPoint localAddress = new IPEndPoint(IPAddress.Any, 0);
-            UdpChannel channel = new UdpChannel(new UdpClient(localAddress));
-            channel.RemoteEndpoint = remoteAddress;
-            return channel;
-        }
-        #endregion
+    private static UdpChannel CreateServerUdp(IPEndPoint localAddress)
+    {
+        return new UdpChannel(new UdpClient(localAddress));
     }
 }

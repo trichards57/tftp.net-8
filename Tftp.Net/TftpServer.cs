@@ -1,145 +1,141 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net.Sockets;
+﻿// <copyright file="TftpServer.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+using System;
 using System.Net;
 using Tftp.Net.Channel;
 using Tftp.Net.Transfer;
 
-namespace Tftp.Net
+namespace Tftp.Net;
+
+public delegate void TftpServerErrorHandler(ITftpTransferError error);
+
+public delegate void TftpServerEventHandler(ITftpTransfer transfer, EndPoint client);
+
+/// <summary>
+/// A simple TFTP server class.
+/// </summary>
+/// <remarks>
+/// The server's socket is closed when this item is disposed.
+/// </remarks>
+public sealed class TftpServer : IDisposable
 {
-    public delegate void TftpServerEventHandler(ITftpTransfer transfer, EndPoint client);
-    public delegate void TftpServerErrorHandler(TftpTransferError error);
+    /// <summary>
+    /// The default port for TFTP servers.
+    /// </summary>
+    public const int DefaultServerPort = 69;
 
     /// <summary>
-    /// A simple TFTP server class. <code>Dispose()</code> the server to close the socket that it listens on.
+    /// Server port that we're listening on.
     /// </summary>
-    public class TftpServer : IDisposable
+    private readonly ITransferChannel serverSocket;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TftpServer"/> class.
+    /// </summary>
+    /// <param name="localEndpoint">The local endpoint to bind to.</param>
+    public TftpServer(IPEndPoint localEndpoint)
     {
-        public const int DEFAULT_SERVER_PORT = 69;
+        ArgumentNullException.ThrowIfNull(localEndpoint);
 
-        /// <summary>
-        /// Fired when the server receives a new read request.
-        /// </summary>
-        public event TftpServerEventHandler OnReadRequest;
+        serverSocket = TransferChannelFactory.CreateServer(localEndpoint);
+        serverSocket.OnCommandReceived += new TftpCommandHandler(ServerSocket_OnCommandReceived);
+        serverSocket.OnError += new TftpChannelErrorHandler(ServerSocket_OnError);
+    }
 
-        /// <summary>
-        /// Fired when the server receives a new write request.
-        /// </summary>
-        public event TftpServerEventHandler OnWriteRequest;
-
-        /// <summary>
-        /// Fired when the server encounters an error (for example, a non-parseable request)
-        /// </summary>
-        public event TftpServerErrorHandler OnError;
-
-        /// <summary>
-        /// Server port that we're listening on.
-        /// </summary>
-        private readonly ITransferChannel serverSocket;
-
-        public TftpServer(IPEndPoint localAddress)
-        {
-            if (localAddress == null)
-                throw new ArgumentNullException("localAddress");
-
-            serverSocket = TransferChannelFactory.CreateServer(localAddress);
-            serverSocket.OnCommandReceived += new TftpCommandHandler(serverSocket_OnCommandReceived);
-            serverSocket.OnError += new TftpChannelErrorHandler(serverSocket_OnError);
-        }
-
-        public TftpServer(IPAddress localAddress)
-            : this(localAddress, DEFAULT_SERVER_PORT)
-        {
-        }
-
-        public TftpServer(IPAddress localAddress, int port)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TftpServer"/> class.
+    /// </summary>
+    /// <param name="localAddress">The local address to bind to.</param>
+    /// <param name="port">The UDP port to listen to.</param>
+    public TftpServer(IPAddress localAddress, int port = DefaultServerPort)
             : this(new IPEndPoint(localAddress, port))
-        {
-        }
+    {
+    }
 
-        public TftpServer(int port)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TftpServer"/> class.
+    /// </summary>
+    /// <param name="port">The UDP port to listen to.</param>
+    public TftpServer(int port = DefaultServerPort)
             : this(new IPEndPoint(IPAddress.Any, port))
+    {
+    }
+
+    /// <summary>
+    /// Fired when the server encounters an error (for example, a non-parseable request)
+    /// </summary>
+    public event TftpServerErrorHandler OnError;
+
+    /// <summary>
+    /// Fired when the server receives a new read request.
+    /// </summary>
+    public event TftpServerEventHandler OnReadRequest;
+
+    /// <summary>
+    /// Fired when the server receives a new write request.
+    /// </summary>
+    public event TftpServerEventHandler OnWriteRequest;
+
+    /// <inheritdoc/>
+    public void Dispose() => serverSocket.Dispose();
+
+    /// <summary>
+    /// Start accepting incoming connections.
+    /// </summary>
+    public void Start() => serverSocket.Open();
+
+    private void RaiseOnError(ITftpTransferError error) => OnError?.Invoke(error);
+
+    private void RaiseOnReadRequest(LocalReadTransfer transfer, EndPoint client)
+    {
+        if (OnReadRequest != null)
         {
+            OnReadRequest(transfer, client);
         }
-
-        public TftpServer()
-            : this(DEFAULT_SERVER_PORT)
+        else
         {
-        }
-
-
-        /// <summary>
-        /// Start accepting incoming connections.
-        /// </summary>
-        public void Start()
-        {
-            serverSocket.Open();
-        }
-
-        void serverSocket_OnError(TftpTransferError error)
-        {
-            RaiseOnError(error);
-        }
-
-        private void serverSocket_OnCommandReceived(ITftpCommand command, EndPoint endpoint)
-        {
-            //Ignore all other commands
-            if (!(command is ReadOrWriteRequest))
-                return;
-
-            //Open a connection to the client
-            ITransferChannel channel = TransferChannelFactory.CreateConnection(endpoint);
-
-            //Create a wrapper for the transfer request
-            ReadOrWriteRequest request = (ReadOrWriteRequest)command;
-            ITftpTransfer transfer = request is ReadRequest ? (ITftpTransfer)new LocalReadTransfer(channel, request.Filename, request.Options) : new LocalWriteTransfer(channel, request.Filename, request.Options);
-
-            if (command is ReadRequest)
-                RaiseOnReadRequest(transfer, endpoint);
-            else if (command is WriteRequest)
-                RaiseOnWriteRequest(transfer, endpoint);
-            else
-                throw new Exception("Unexpected tftp transfer request: " + command);
-        }
-
-        #region IDisposable
-        public void Dispose()
-        {
-            serverSocket.Dispose();
-        }
-        #endregion
-
-        private void RaiseOnError(TftpTransferError error)
-        {
-            if (OnError != null)
-                OnError(error);
-        }
-
-        private void RaiseOnWriteRequest(ITftpTransfer transfer, EndPoint client)
-        {
-            if (OnWriteRequest != null)
-            {
-                OnWriteRequest(transfer, client);
-            }
-            else
-            {
-                transfer.Cancel(new TftpErrorPacket(0, "Server did not provide a OnWriteRequest handler."));
-            }
-        }
-
-        private void RaiseOnReadRequest(ITftpTransfer transfer, EndPoint client)
-        {
-            if (OnReadRequest != null)
-            {
-                OnReadRequest(transfer, client);
-            }
-            else
-            {
-                transfer.Cancel(new TftpErrorPacket(0, "Server did not provide a OnReadRequest handler."));
-            }
+            transfer.Cancel(new TftpErrorPacket(0, "Server did not provide a OnReadRequest handler."));
         }
     }
-}
 
+    private void RaiseOnWriteRequest(LocalWriteTransfer transfer, EndPoint client)
+    {
+        if (OnWriteRequest != null)
+        {
+            OnWriteRequest(transfer, client);
+        }
+        else
+        {
+            transfer.Cancel(new TftpErrorPacket(0, "Server did not provide a OnWriteRequest handler."));
+        }
+    }
+
+    private void ServerSocket_OnCommandReceived(ITftpCommand command, EndPoint endpoint)
+    {
+        // Ignore all other commands
+        if (command is not ReadOrWriteRequest request)
+        {
+            return;
+        }
+
+        // Open a connection to the client
+        ITransferChannel channel = TransferChannelFactory.CreateConnection(endpoint);
+
+        if (command is ReadRequest)
+        {
+            RaiseOnReadRequest(new LocalReadTransfer(channel, request.Filename, request.Options), endpoint);
+        }
+        else if (command is WriteRequest)
+        {
+            RaiseOnWriteRequest(new LocalWriteTransfer(channel, request.Filename, request.Options), endpoint);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Unexpected TFTP transfer request: {command}");
+        }
+    }
+
+    private void ServerSocket_OnError(ITftpTransferError error) => RaiseOnError(error);
+}

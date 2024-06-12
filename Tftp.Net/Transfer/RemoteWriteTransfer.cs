@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="RemoteWriteTransfer.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using Tftp.Net.Channel;
 using Tftp.Net.Transfer.States;
-using Tftp.Net.Transfer;
 
-namespace Tftp.Net.Transfer
+namespace Tftp.Net.Transfer;
+
+internal class RemoteWriteTransfer : TftpTransfer
 {
-    class RemoteWriteTransfer : TftpTransfer
+    public RemoteWriteTransfer(ITransferChannel connection, string filename)
+        : base(connection, filename, new StartOutgoingWrite())
     {
-        public RemoteWriteTransfer(ITransferChannel connection, String filename)
-            : base(connection, filename, new StartOutgoingWrite())
-        {
-        }
     }
 }

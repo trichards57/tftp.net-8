@@ -1,32 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Tftp.Net.Transfer;
+﻿// <copyright file="TftpTrace.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-namespace Tftp.Net.Trace
+namespace Tftp.Net.Trace;
+
+/// <summary>
+/// Class that controls all tracing in the TFTP module.
+/// </summary>
+public static class TftpTrace
 {
-    /// <summary>
-    /// Class that controls all tracing in the TFTP module.
-    /// </summary>
-    public static class TftpTrace
+    static TftpTrace()
     {
-        /// <summary>
-        /// Set this property to <code>false</code> to disable tracing.
-        /// </summary>
-        public static bool Enabled { get; set; }
+        Enabled = false;
+    }
 
-        static TftpTrace()
+    /// <summary>
+    /// Set this property to <see langword="false" /> to disable tracing.
+    /// </summary>
+    public static bool Enabled { get; set; }
+
+    internal static void Trace(string message, ITftpTransfer transfer)
+    {
+        if (!Enabled)
         {
-            Enabled = false;
+            return;
         }
 
-        internal static void Trace(String message, ITftpTransfer transfer)
-        {
-            if (!Enabled)
-                return;
-
-            System.Diagnostics.Trace.WriteLine(message, transfer.ToString());
-        }
+        System.Diagnostics.Trace.WriteLine(message, transfer.ToString());
     }
 }

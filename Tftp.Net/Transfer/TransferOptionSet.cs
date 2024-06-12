@@ -1,113 +1,134 @@
-﻿using System;
+﻿// <copyright file="TransferOptionSet.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Tftp.Net.Transfer;
 
-namespace Tftp.Net.Transfer
+namespace Tftp.Net.Transfer;
+
+internal class TransferOptionSet
 {
-    class TransferOptionSet
+    public const int DefaultBlockSize = 512;
+    public const int DefaultTimeoutSeconds = 5;
+
+    public TransferOptionSet(IEnumerable<TransferOption> options)
     {
-        public const int DEFAULT_BLOCKSIZE = 512;
-        public const int DEFAULT_TIMEOUT_SECS = 5;
+        IncludesBlockSizeOption = IncludesTimeoutOption = IncludesTransferSizeOption = false;
 
-        public bool IncludesBlockSizeOption = false;
-        public int BlockSize = DEFAULT_BLOCKSIZE;
-
-        public bool IncludesTimeoutOption = false;
-        public int Timeout = DEFAULT_TIMEOUT_SECS;
-
-        public bool IncludesTransferSizeOption = false;
-        public long TransferSize = 0;
-
-        public static TransferOptionSet NewDefaultSet()
+        foreach (TransferOption option in options)
         {
-            return new TransferOptionSet() { IncludesBlockSizeOption = true, IncludesTimeoutOption = true, IncludesTransferSizeOption = true };
+            Parse(option);
+        }
+    }
+
+    private TransferOptionSet()
+    {
+    }
+
+    public int BlockSize { get; set; } = DefaultBlockSize;
+
+    public bool IncludesBlockSizeOption { get; set; } = false;
+
+    public bool IncludesTimeoutOption { get; set; } = false;
+
+    public bool IncludesTransferSizeOption { get; set; } = false;
+
+    public int Timeout { get; set; } = DefaultTimeoutSeconds;
+
+    public long TransferSize { get; set; } = 0;
+
+    public static TransferOptionSet NewDefaultSet()
+    {
+        return new TransferOptionSet() { IncludesBlockSizeOption = true, IncludesTimeoutOption = true, IncludesTransferSizeOption = true };
+    }
+
+    public static TransferOptionSet NewEmptySet()
+    {
+        return new TransferOptionSet() { IncludesBlockSizeOption = false, IncludesTimeoutOption = false, IncludesTransferSizeOption = false };
+    }
+
+    public List<TransferOption> ToOptionList()
+    {
+        var result = new List<TransferOption>();
+
+        if (IncludesBlockSizeOption)
+        {
+            result.Add(new TransferOption("blksize", BlockSize.ToString()));
         }
 
-        public static TransferOptionSet NewEmptySet()
+        if (IncludesTimeoutOption)
         {
-            return new TransferOptionSet() { IncludesBlockSizeOption = false, IncludesTimeoutOption = false, IncludesTransferSizeOption = false };
+            result.Add(new TransferOption("timeout", Timeout.ToString()));
         }
 
-        private TransferOptionSet()
+        if (IncludesTransferSizeOption)
         {
+            result.Add(new TransferOption("tsize", TransferSize.ToString()));
         }
 
-        public TransferOptionSet(IEnumerable<TransferOption> options)
-        {
-            IncludesBlockSizeOption = IncludesTimeoutOption = IncludesTransferSizeOption = false;
+        return result;
+    }
 
-            foreach (TransferOption option in options)
-            {
-                Parse(option);
-            }
+    private void Parse(TransferOption option)
+    {
+        switch (option.Name)
+        {
+            case "blksize":
+                IncludesBlockSizeOption = ParseBlockSizeOption(option.Value);
+                break;
+
+            case "timeout":
+                IncludesTimeoutOption = ParseTimeoutOption(option.Value);
+                break;
+
+            case "tsize":
+                IncludesTransferSizeOption = ParseTransferSizeOption(option.Value);
+                break;
+        }
+    }
+
+    private bool ParseBlockSizeOption(string value)
+    {
+        if (!int.TryParse(value, out var blockSize))
+        {
+            return false;
         }
 
-        private void Parse(TransferOption option)
+        // Only accept block sizes in the range [8, 65464]
+        if (blockSize < 8 || blockSize > 65464)
         {
-            switch (option.Name)
-            {
-                case "blksize":
-                    IncludesBlockSizeOption = ParseBlockSizeOption(option.Value);
-                    break;
-
-                case "timeout":
-                    IncludesTimeoutOption = ParseTimeoutOption(option.Value);
-                    break;
-
-                case "tsize":
-                    IncludesTransferSizeOption = ParseTransferSizeOption(option.Value);
-                    break;
-            }
+            return false;
         }
 
-        public List<TransferOption> ToOptionList()
+        BlockSize = blockSize;
+        return true;
+    }
+
+    private bool ParseTimeoutOption(string value)
+    {
+        if (!int.TryParse(value, out var timeout))
         {
-            List<TransferOption> result = new List<TransferOption>();
-            if (IncludesBlockSizeOption)
-                result.Add(new TransferOption("blksize", BlockSize.ToString()));
-
-            if (IncludesTimeoutOption)
-                result.Add(new TransferOption("timeout", Timeout.ToString()));
-
-            if (IncludesTransferSizeOption)
-                result.Add(new TransferOption("tsize", TransferSize.ToString()));
-
-            return result;
+            return false;
         }
 
-        private bool ParseTransferSizeOption(string value)
+        // Only accept timeouts in the range [1, 255]
+        if (timeout < 1 || timeout > 255)
         {
-            return long.TryParse(value, out TransferSize) && TransferSize >= 0;
+            return false;
         }
 
-        private bool ParseTimeoutOption(string value)
+        Timeout = timeout;
+        return true;
+    }
+
+    private bool ParseTransferSizeOption(string value)
+    {
+        if (long.TryParse(value, out var txSize) && txSize >= 0)
         {
-            int timeout;
-            if (!int.TryParse(value, out timeout))
-                return false;
-
-            //Only accept timeouts in the range [1, 255]
-            if (timeout < 1 || timeout > 255)
-                return false;
-
-            Timeout = timeout;
+            TransferSize = txSize;
             return true;
         }
 
-        private bool ParseBlockSizeOption(string value)
-        {
-            int blockSize;
-            if (!int.TryParse(value, out blockSize))
-                return false;
-
-            //Only accept block sizes in the range [8, 65464]
-            if (blockSize < 8 || blockSize > 65464)
-                return false;
-
-            BlockSize = blockSize;
-            return true;
-        }
+        return false;
     }
 }

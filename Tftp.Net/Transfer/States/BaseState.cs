@@ -1,36 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
+﻿// <copyright file="BaseState.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using System.Net;
 
-namespace Tftp.Net.Transfer.States
+namespace Tftp.Net.Transfer.States;
+
+internal class BaseState : ITransferState
 {
-    class BaseState : ITransferState
+    public TftpTransfer Context { get; set; }
+
+    public virtual void OnCancel(TftpErrorPacket reason)
     {
-        public TftpTransfer Context { get; set; }
+    }
 
-        public virtual void OnStateEnter()
-        {
-            //no-op
-        }
+    public virtual void OnCommand(ITftpCommand command, EndPoint endpoint)
+    {
+    }
 
-        public virtual void OnStart()
-        {
-        }
+    public virtual void OnStart()
+    {
+    }
 
-        public virtual void OnCancel(TftpErrorPacket reason)
-        {
-        }
+    public virtual void OnStateEnter()
+    {
+        // no-op
+    }
 
-        public virtual void OnCommand(ITftpCommand command, EndPoint endpoint)
-        {
-        }
-
-        public virtual void OnTimer()
-        {
-            //Ignore timer events
-        }
+    public virtual void OnTimer()
+    {
+        // Ignore timer events
     }
 }

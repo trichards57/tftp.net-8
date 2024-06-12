@@ -1,53 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="TftpCommand_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
 
-namespace Tftp.Net.UnitTests
+namespace Tftp.Net.UnitTests;
+
+[TestFixture]
+internal class TftpCommand_Test
 {
-    [TestFixture]
-    class TftpCommand_Test
+    [Test]
+    public void CreateAck()
     {
-        [Test]
-        public void CreateAck()
-        {
-            Acknowledgement command = new Acknowledgement(100);
-            Assert.AreEqual(command.BlockNumber, 100);
-        }
+        var command = new Acknowledgement(100);
+        Assert.That(command.BlockNumber, Is.EqualTo(100));
+    }
 
-        [Test]
-        public void CreateError()
+    [Test]
+    public void CreateData()
+    {
+        var data = new byte[] { 1, 2, 3 };
+        var command = new Data(150, data);
+        Assert.Multiple(() =>
         {
-            Error command = new Error(123, "Hallo Welt");
-            Assert.AreEqual(command.ErrorCode, 123);
-            Assert.AreEqual(command.Message, "Hallo Welt");
-        }
+            Assert.That(command.BlockNumber, Is.EqualTo(150));
+            Assert.That(data, Is.EqualTo(command.Bytes));
+        });
+    }
 
-        [Test]
-        public void CreateReadRequest()
+    [Test]
+    public void CreateError()
+    {
+        var command = new Error(123, "Hallo Welt");
+        Assert.Multiple(() =>
         {
-            ReadRequest command = new ReadRequest(@"C:\bla\blub.txt", TftpTransferMode.octet, null);
-            Assert.AreEqual(command.Filename, @"C:\bla\blub.txt");
-            Assert.AreEqual(command.Mode, TftpTransferMode.octet);
-        }
+            Assert.That(command.ErrorCode, Is.EqualTo(123));
+            Assert.That(command.Message, Is.EqualTo("Hallo Welt"));
+        });
+    }
 
-        [Test]
-        public void CreateWriteRequest()
+    [Test]
+    public void CreateReadRequest()
+    {
+        var command = new ReadRequest(@"C:\bla\blub.txt", TftpTransferMode.octet, null);
+        Assert.Multiple(() =>
         {
-            WriteRequest command = new WriteRequest(@"C:\bla\blub.txt", TftpTransferMode.octet, null);
-            Assert.AreEqual(command.Filename, @"C:\bla\blub.txt");
-            Assert.AreEqual(command.Mode, TftpTransferMode.octet);
-        }
+            Assert.That(command.Filename, Is.EqualTo(@"C:\bla\blub.txt"));
+            Assert.That(command.Mode, Is.EqualTo(TftpTransferMode.octet));
+        });
+    }
 
-        [Test]
-        public void CreateData()
+    [Test]
+    public void CreateWriteRequest()
+    {
+        var command = new WriteRequest(@"C:\bla\blub.txt", TftpTransferMode.octet, null);
+        Assert.Multiple(() =>
         {
-            byte[] data = new byte[] { 1, 2, 3 };
-            Data command = new Data(150, data);
-            Assert.AreEqual(command.BlockNumber, 150);
-            Assert.AreEqual(command.Bytes, data);
-        }
-
+            Assert.That(command.Filename, Is.EqualTo(@"C:\bla\blub.txt"));
+            Assert.That(command.Mode, Is.EqualTo(TftpTransferMode.octet));
+        });
     }
 }

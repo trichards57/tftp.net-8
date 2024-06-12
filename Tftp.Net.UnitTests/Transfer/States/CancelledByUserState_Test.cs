@@ -1,34 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// <copyright file="CancelledByUserState_Test.cs" company="Tony Richards">
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 using NUnit.Framework;
 using Tftp.Net.Transfer.States;
 
-namespace Tftp.Net.UnitTests
+namespace Tftp.Net.UnitTests;
+
+[TestFixture]
+internal class CancelledByUserState_Test
 {
-    [TestFixture]
-    class CancelledByUserState_Test
+    private TransferStub transfer;
+
+    [Test]
+    public void SendsErrorToClient()
     {
-        private TransferStub transfer;
+        Assert.That(transfer.CommandWasSent(typeof(Error)), Is.True);
+    }
 
-        [SetUp]
-        public void Setup()
-        {
-            transfer = new TransferStub();
-            transfer.SetState(new CancelledByUser(TftpErrorPacket.IllegalOperation));
-        }
+    [SetUp]
+    public void Setup()
+    {
+        transfer = new TransferStub();
+        transfer.SetState(new CancelledByUser(TftpErrorPacket.IllegalOperation));
+    }
 
-        [Test]
-        public void SendsErrorToClient()
-        {
-            Assert.IsTrue(transfer.CommandWasSent(typeof(Error)));
-        }
+    [TearDown]
+    public void Teardown()
+    {
+        transfer.Dispose();
+    }
 
-        [Test]
-        public void TransitionsToClosedState()
-        {
-            Assert.IsInstanceOf<Closed>(transfer.State);
-        }
+    [Test]
+    public void TransitionsToClosedState()
+    {
+        Assert.That(transfer.State, Is.InstanceOf<Closed>());
     }
 }
