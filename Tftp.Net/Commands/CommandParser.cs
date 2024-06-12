@@ -5,7 +5,7 @@
 using System;
 using System.IO;
 
-namespace Tftp.Net;
+namespace Tftp.Net.Commands;
 
 /// <summary>
 /// Parses a ITftpCommand.

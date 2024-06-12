@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Tftp.Net;
+namespace Tftp.Net.Commands;
 
 internal readonly record struct OptionAcknowledgement : ITftpCommand
 {

@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Tftp.Net;
+namespace Tftp.Net.Commands;
 
 /// <summary>
 /// Represents an error that occurs when parsing a TFTP message.

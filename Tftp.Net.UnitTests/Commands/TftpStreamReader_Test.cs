@@ -4,6 +4,7 @@
 
 using FluentAssertions;
 using System.IO;
+using Tftp.Net.Commands;
 using Xunit;
 
 namespace Tftp.Net.UnitTests;

@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Tftp.Net;
+namespace Tftp.Net.Commands;
 
 internal static class TransferOptionParser
 {

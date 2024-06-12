@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Tftp.Net;
+namespace Tftp.Net.Commands;
 
 internal abstract class ReadOrWriteRequest(ushort opCode, string filename, TftpTransferMode mode, IEnumerable<TransferOption> options)
 {

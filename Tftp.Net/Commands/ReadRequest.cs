@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Tftp.Net;
+namespace Tftp.Net.Commands;
 
 internal class ReadRequest(string filename, TftpTransferMode mode, IEnumerable<TransferOption> options)
     : ReadOrWriteRequest(OpCode, filename, mode, options), ITftpCommand

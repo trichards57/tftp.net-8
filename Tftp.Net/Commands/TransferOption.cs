@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Tftp.Net;
+namespace Tftp.Net.Commands;
 
 /// <summary>
 /// A single transfer options according to RFC2347.

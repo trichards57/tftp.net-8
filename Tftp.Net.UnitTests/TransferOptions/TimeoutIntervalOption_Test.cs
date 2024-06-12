@@ -3,6 +3,7 @@
 // </copyright>
 
 using NUnit.Framework;
+using Tftp.Net.Commands;
 using Tftp.Net.Transfer;
 
 namespace Tftp.Net.UnitTests.TransferOptions;

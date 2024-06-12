@@ -6,7 +6,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Tftp.Net;
+namespace Tftp.Net.Commands;
 
 internal class TftpStreamReader(Stream stream, bool disposeStream = false) : IDisposable
 {

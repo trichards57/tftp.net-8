@@ -9,8 +9,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Tftp.Net.Channel;
+using Tftp.Net.Commands;
 using Tftp.Net.Transfer;
-using Tftp.Net.Transfer.StateMachine;
 
 namespace Tftp.Net;
 

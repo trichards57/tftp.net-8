@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using Tftp.Net.Commands;
 
 namespace Tftp.Net.Channel;
 

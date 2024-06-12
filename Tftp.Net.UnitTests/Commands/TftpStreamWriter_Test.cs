@@ -5,6 +5,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 using System.IO;
+using Tftp.Net.Commands;
 using Xunit;
 
 namespace Tftp.Net.UnitTests;

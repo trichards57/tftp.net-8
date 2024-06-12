@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Tftp.Net.Commands;
 
 namespace Tftp.Net.Transfer;
 

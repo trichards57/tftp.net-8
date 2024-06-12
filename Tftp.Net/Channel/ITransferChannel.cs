@@ -4,6 +4,7 @@
 
 using System;
 using System.Net;
+using Tftp.Net.Commands;
 
 namespace Tftp.Net.Channel;
 

@@ -4,6 +4,7 @@
 
 using Microsoft.Extensions.Logging;
 using System;
+using Tftp.Net.Logging;
 
 namespace Tftp.Net.Trace;
 

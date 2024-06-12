@@ -9,8 +9,10 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using Tftp.Net.Channel;
+using Tftp.Net.Commands;
+using Tftp.Net.Transfer.StateMachine;
 
-namespace Tftp.Net.Transfer.StateMachine;
+namespace Tftp.Net.Transfer;
 
 internal sealed class LocalReadTransfer : ITftpTransfer
 {
@@ -57,7 +59,7 @@ internal sealed class LocalReadTransfer : ITftpTransfer
 
         stateMachine.Configure(State.Cancelled)
             .Permit(Trigger.Close, State.Closed)
-            .OnEntryFrom(cancelTrigger, (ushort code, string message) =>
+            .OnEntryFrom(cancelTrigger, (code, message) =>
             {
                 connection.Send(new Error { ErrorCode = code, Message = message });
                 stateMachine.Fire(Trigger.Close);

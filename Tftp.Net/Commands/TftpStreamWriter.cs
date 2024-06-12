@@ -5,7 +5,7 @@
 using System;
 using System.IO;
 
-namespace Tftp.Net;
+namespace Tftp.Net.Commands;
 
 internal class TftpStreamWriter(Stream stream, bool disposeStream = false) : IDisposable
 {
