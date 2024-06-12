@@ -36,4 +36,8 @@ internal sealed class ChannelStub : ITransferChannel
     public void RaiseOnError(ITftpTransferError error) => OnError?.Invoke(error);
 
     public void Send(ITftpCommand command) => SentCommands.Add(command);
+
+    public void Close()
+    {
+    }
 }
