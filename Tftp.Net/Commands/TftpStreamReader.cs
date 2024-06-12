@@ -7,45 +7,49 @@ using System.IO;
 
 namespace Tftp.Net;
 
-internal class TftpStreamReader
+internal class TftpStreamReader(Stream stream) : IDisposable
 {
-    private readonly Stream stream;
+    private readonly BinaryReader reader = new(stream);
+    private bool disposed = false;
 
-    public TftpStreamReader(Stream stream)
+    public void Dispose()
     {
-        this.stream = stream;
-    }
-
-    public ushort ReadUInt16()
-    {
-        int byte1 = stream.ReadByte();
-        int byte2 = stream.ReadByte();
-        return (ushort)((byte)byte1 << 8 | (byte)byte2);
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
     public byte ReadByte()
     {
-        int nextByte = stream.ReadByte();
-
-        if (nextByte == -1)
-        {
-            throw new IOException();
-        }
-
-        return (byte)nextByte;
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return reader.ReadByte();
     }
 
     public byte[] ReadBytes(int maxBytes)
     {
-        byte[] buffer = new byte[maxBytes];
-        int bytesRead = stream.Read(buffer, 0, buffer.Length);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return reader.ReadBytes(maxBytes);
+    }
 
-        if (bytesRead == -1)
+    public ushort ReadUInt16()
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        var byte1 = reader.ReadByte();
+        var byte2 = reader.ReadByte();
+        return (ushort)(byte1 << 8 | byte2);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposed)
         {
-            throw new IOException();
+            return;
         }
 
-        Array.Resize(ref buffer, bytesRead);
-        return buffer;
+        if (disposing)
+        {
+            reader.Dispose();
+        }
+
+        disposed = true;
     }
 }
