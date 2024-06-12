@@ -75,4 +75,10 @@ internal class TftpStreamReader_Test
         var ms = new MemoryStream(data);
         tested = new TftpStreamReader(ms);
     }
+
+    [TearDown]
+    public void TearDown()
+    {
+        tested.Dispose();
+    }
 }

@@ -20,6 +20,12 @@ internal class TftpStreamWriter_Test
         tested = new TftpStreamWriter(ms);
     }
 
+    [TearDown]
+    public void TearDown()
+    {
+        tested.Dispose();
+    }
+
     [Test]
     public void WritesArrays()
     {

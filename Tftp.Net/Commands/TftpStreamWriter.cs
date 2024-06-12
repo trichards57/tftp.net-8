@@ -2,32 +2,53 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System;
 using System.IO;
 
 namespace Tftp.Net;
 
-internal class TftpStreamWriter
+internal class TftpStreamWriter(Stream stream) : IDisposable
 {
-    private readonly Stream stream;
+    private readonly BinaryWriter writer = new(stream);
+    private bool disposed = false;
 
-    public TftpStreamWriter(Stream stream)
+    public void Dispose()
     {
-        this.stream = stream;
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
     public void WriteUInt16(ushort value)
     {
-        stream.WriteByte((byte)(value >> 8));
-        stream.WriteByte((byte)(value & 0xFF));
+        ObjectDisposedException.ThrowIf(disposed, this);
+        writer.Write((byte)(value >> 8));
+        writer.Write((byte)(value & 0xFF));
     }
 
     public void WriteByte(byte b)
     {
-        stream.WriteByte(b);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        writer.Write(b);
     }
 
-    public void WriteBytes(byte[] data)
+    public void WriteBytes(Span<byte> data)
     {
-        stream.Write(data, 0, data.Length);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        writer.Write(data);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            writer.Dispose();
+        }
+
+        disposed = true;
     }
 }
