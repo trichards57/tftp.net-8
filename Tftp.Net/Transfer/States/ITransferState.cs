@@ -27,7 +27,7 @@ internal interface ITransferState
     /// </summary>
     /// <param name="command">The received command.</param>
     /// <param name="endpoint">The endpoint the command was received from.</param>
-    void OnCommand(ITftpCommand command, EndPoint endpoint);
+    void OnCommand(ITftpCommand command, IPEndPoint endpoint);
 
     /// <summary>
     /// Called when the transfer is started.

@@ -15,7 +15,7 @@ internal class SendReadRequest : StateWithNetworkTimeout
     }
 
     /// <inheritdoc/>
-    public override void OnCommand(ITftpCommand command, EndPoint endpoint)
+    public override void OnCommand(ITftpCommand command, IPEndPoint endpoint)
     {
         if (command is Data || command is OptionAcknowledgement)
         {

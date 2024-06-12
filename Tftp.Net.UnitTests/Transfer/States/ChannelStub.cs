@@ -19,7 +19,7 @@ internal sealed class ChannelStub : ITransferChannel
 
     public event TftpChannelErrorHandler OnError;
 
-    public EndPoint RemoteEndpoint { get; set; }
+    public IPEndPoint RemoteEndpoint { get; set; }
 
     public List<ITftpCommand> SentCommands { get; } = [];
 
@@ -31,7 +31,7 @@ internal sealed class ChannelStub : ITransferChannel
     {
     }
 
-    public void RaiseCommandReceived(ITftpCommand command, EndPoint endpoint) => OnCommandReceived?.Invoke(command, endpoint);
+    public void RaiseCommandReceived(ITftpCommand command, IPEndPoint endpoint) => OnCommandReceived?.Invoke(command, endpoint);
 
     public void RaiseOnError(ITftpTransferError error) => OnError?.Invoke(error);
 

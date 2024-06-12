@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System.Net;
+
 namespace Tftp.Net.Transfer.States;
 
 internal class SendWriteRequest : StateWithNetworkTimeout
@@ -13,7 +15,7 @@ internal class SendWriteRequest : StateWithNetworkTimeout
     }
 
     /// <inheritdoc/>
-    public override void OnCommand(ITftpCommand command, System.Net.EndPoint endpoint)
+    public override void OnCommand(ITftpCommand command, IPEndPoint endpoint)
     {
         if (command is OptionAcknowledgement)
         {
@@ -44,7 +46,7 @@ internal class SendWriteRequest : StateWithNetworkTimeout
         SendRequest();
     }
 
-    private void BeginSendingTo(System.Net.EndPoint endpoint)
+    private void BeginSendingTo(IPEndPoint endpoint)
     {
         // Switch to the endpoint that we received from the server
         Context.GetConnection().RemoteEndpoint = endpoint;

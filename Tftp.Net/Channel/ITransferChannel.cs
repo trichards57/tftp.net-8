@@ -9,7 +9,7 @@ namespace Tftp.Net.Channel;
 
 internal delegate void TftpChannelErrorHandler(ITftpTransferError error);
 
-internal delegate void TftpCommandHandler(ITftpCommand command, EndPoint endpoint);
+internal delegate void TftpCommandHandler(ITftpCommand command, IPEndPoint endpoint);
 
 internal interface ITransferChannel : IDisposable
 {
@@ -17,7 +17,7 @@ internal interface ITransferChannel : IDisposable
 
     event TftpChannelErrorHandler OnError;
 
-    EndPoint RemoteEndpoint { get; set; }
+    IPEndPoint RemoteEndpoint { get; set; }
 
     void Open();
 

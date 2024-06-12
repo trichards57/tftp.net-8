@@ -14,7 +14,7 @@ internal class BaseState : ITransferState
     {
     }
 
-    public virtual void OnCommand(ITftpCommand command, EndPoint endpoint)
+    public virtual void OnCommand(ITftpCommand command, IPEndPoint endpoint)
     {
     }
 

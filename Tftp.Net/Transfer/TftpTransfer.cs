@@ -218,7 +218,7 @@ internal class TftpTransfer : ITftpTransfer
         }
     }
 
-    private void Connection_OnCommandReceived(ITftpCommand command, EndPoint endpoint)
+    private void Connection_OnCommandReceived(ITftpCommand command, IPEndPoint endpoint)
     {
         lock (lockObject)
         {

@@ -30,7 +30,7 @@ internal class LoggingStateDecorator(ITransferState decoratee, TftpTransfer tran
         decoratee.OnCancel(reason);
     }
 
-    public void OnCommand(ITftpCommand command, EndPoint endpoint)
+    public void OnCommand(ITftpCommand command, IPEndPoint endpoint)
     {
         TftpTrace.Trace(GetStateName() + " OnCommand: " + command + " from " + endpoint, transfer);
         decoratee.OnCommand(command, endpoint);

@@ -35,7 +35,7 @@ internal class UdpChannel_Test
         var remote = OpenRemoteUdpClient();
 
         tested.Open();
-        tested.RemoteEndpoint = remote.Client.LocalEndPoint;
+        tested.RemoteEndpoint = (IPEndPoint)remote.Client.LocalEndPoint;
         tested.Send(new Acknowledgement(1));
 
         AssertBytesReceived(remote, TimeSpan.FromMilliseconds(500));

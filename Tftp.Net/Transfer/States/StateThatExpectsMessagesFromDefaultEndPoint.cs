@@ -14,7 +14,7 @@ internal class StateThatExpectsMessagesFromDefaultEndPoint : StateWithNetworkTim
         throw new NotImplementedException();
     }
 
-    public override void OnCommand(ITftpCommand command, EndPoint endpoint)
+    public override void OnCommand(ITftpCommand command, IPEndPoint endpoint)
     {
         if (!endpoint.Equals(Context.GetConnection().RemoteEndpoint))
         {

@@ -19,19 +19,13 @@ internal sealed class UdpChannel(UdpClient client) : ITransferChannel
 
     public event TftpChannelErrorHandler OnError;
 
-    public EndPoint RemoteEndpoint
+    public IPEndPoint RemoteEndpoint
     {
         get => endpoint;
         set
         {
             ObjectDisposedException.ThrowIf(client == null, this);
-
-            if (value is not IPEndPoint)
-            {
-                throw new NotSupportedException("UdpChannel can only connect to IPEndPoints.");
-            }
-
-            endpoint = (IPEndPoint)value;
+            endpoint = value;
         }
     }
 
