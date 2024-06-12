@@ -18,7 +18,7 @@ internal static class Program
         var client = new TftpClient("localhost");
 
         // Prepare a simple transfer (GET test.dat)
-        var transfer = client.Download("EUPL-EN.pdf");
+        var transfer = client.Download("Stateless.dll");
 
         // Capture the events that may happen during the transfer
         transfer.OnProgress += Transfer_OnProgress;

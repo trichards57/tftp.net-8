@@ -5,10 +5,12 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Tftp.Net.Channel;
 using Tftp.Net.Transfer;
+using Tftp.Net.Transfer.StateMachine;
 
 namespace Tftp.Net;
 
@@ -132,7 +134,7 @@ public sealed class TftpServer : IDisposable
 
         if (command is ReadRequest)
         {
-            RaiseOnReadRequest(new LocalReadTransfer(channel, request.Filename, request.Options, logger), endpoint);
+            RaiseOnReadRequest(new LocalReadTransfer(request.Options.ToList(), channel, request.Filename, TimeProvider.System), endpoint);
         }
         else if (command is WriteRequest)
         {

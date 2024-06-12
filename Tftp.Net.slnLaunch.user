@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Name": "Tftp.Net.SampleServer\\Tftp.Net.SampleServer.csproj",
+        "Action": "Start"
+      },
+      {
+        "Name": "Tftp.Net.SampleClient\\Tftp.Net.SampleClient.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

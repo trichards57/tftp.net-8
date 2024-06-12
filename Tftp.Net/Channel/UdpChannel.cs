@@ -12,7 +12,7 @@ namespace Tftp.Net.Channel;
 internal class UdpChannel(UdpClient client) : ITransferChannel
 {
     private readonly object lockObject = new();
-    private readonly UdpClient client = client;
+    private UdpClient client = client;
     private bool disposed = false;
     private IPEndPoint endpoint = null;
 
@@ -76,6 +76,7 @@ internal class UdpChannel(UdpClient client) : ITransferChannel
             if (disposing)
             {
                 client.Dispose();
+                client = null;
             }
 
             disposed = true;
