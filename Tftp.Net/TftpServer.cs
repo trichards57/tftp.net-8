@@ -34,7 +34,7 @@ public sealed class TftpServer : IDisposable
     /// <summary>
     /// Server port that we're listening on.
     /// </summary>
-    private readonly ITransferChannel serverSocket;
+    private readonly UdpChannel serverSocket;
 
     private readonly ILogger logger;
 
@@ -138,7 +138,7 @@ public sealed class TftpServer : IDisposable
         }
         else if (command is WriteRequest)
         {
-            RaiseOnWriteRequest(new LocalWriteTransfer(channel, request.Filename, request.Options, logger), endpoint);
+            RaiseOnWriteRequest(new LocalWriteTransfer(channel), endpoint);
         }
         else
         {

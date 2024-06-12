@@ -3,7 +3,6 @@
 // </copyright>
 
 using FluentAssertions;
-using NUnit.Framework;
 using System.IO;
 using Xunit;
 
@@ -33,7 +32,7 @@ public class TftpStreamReader_Test
     public void ReadsIntoLargerArrays()
     {
         var expected = new byte[] { 0x00, 0x01, 0x02, 0x03 };
-        byte[] actual = tested.ReadBytes(4);
+        byte[] actual = tested.ReadBytes(10);
 
         actual.Should().BeEquivalentTo(expected);
     }

@@ -2,38 +2,48 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Tftp.Net.Channel;
-using Tftp.Net.Transfer.States;
 
 namespace Tftp.Net.Transfer;
 
-internal class LocalWriteTransfer(ITransferChannel connection, string filename, IEnumerable<TransferOption> options, ILogger logger) 
-    : TftpTransfer(connection, filename, new StartIncomingWrite(options, logger), logger)
+internal sealed class LocalWriteTransfer(ITransferChannel connection) : ITftpTransfer
 {
-    public override TftpTransferMode TransferMode
+    private readonly ITransferChannel connection = connection;
+
+    public event TftpErrorHandler OnError;
+
+    public event TftpEventHandler OnFinished;
+
+    public event TftpProgressHandler OnProgress;
+
+    public BlockCounterWrapAround BlockCounterWrapping { get; set; }
+
+    public int BlockSize { get; set; }
+
+    public long ExpectedSize { get; set; }
+
+    public string Filename { get; }
+
+    public int RetryCount { get; set; }
+
+    public TimeSpan RetryTimeout { get; set; }
+
+    public TftpTransferMode TransferMode { get; set; }
+
+    public object UserContext { get; set; }
+
+    public void Cancel(TftpErrorPacket reason)
     {
-        get { return base.TransferMode; }
-        set { throw new NotSupportedException("Cannot change the transfer mode for incoming transfers. The transfer mode is determined by the client."); }
     }
 
-    public override int BlockSize
+    public void Dispose()
     {
-        get { return base.BlockSize; }
-        set { throw new NotSupportedException("For incoming transfers, the blocksize is determined by the client."); }
     }
 
-    public override TimeSpan RetryTimeout
+    public void Start(Stream data)
     {
-        get { return base.RetryTimeout; }
-        set { throw new NotSupportedException("For incoming transfers, the retry timeout is determined by the client."); }
-    }
-
-    public override long ExpectedSize
-    {
-        get { return base.ExpectedSize; }
-        set { throw new NotSupportedException("You cannot set the expected size of a file that is remotely transferred to this system."); }
+        connection.Send(new Error { ErrorCode = 2, Message = "Write-Access is not supported." });
     }
 }

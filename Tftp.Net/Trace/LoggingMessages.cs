@@ -24,7 +24,7 @@ internal static partial class LoggingMessages
     [LoggerMessage(EventId = LoggingCodes.StateCommandReceived, Level = LogLevel.Information, Message = "State {state} received a command.")]
     public static partial void StateCommandReceived(this ILogger logger, string state);
 
-    [LoggerMessage(EventId = LoggingCodes.StateDataReceived, Level = LogLevel.Information, Message = "State {state} received acknowledgement for {blockNumber}.")]
+    [LoggerMessage(EventId = LoggingCodes.StateAcknowledged, Level = LogLevel.Information, Message = "State {state} received acknowledgement for {blockNumber}.")]
     public static partial void StateAcknowledged(this ILogger logger, string state, ushort blockNumber);
 
     [LoggerMessage(EventId = LoggingCodes.StateEntered, Level = LogLevel.Information, Message = "State {state} entered.")]
