@@ -9,10 +9,11 @@ using System.Net.Sockets;
 
 namespace Tftp.Net.Channel;
 
-internal sealed class UdpChannel(UdpClient client) : ITransferChannel
+internal class UdpChannel(UdpClient client) : ITransferChannel
 {
     private readonly object lockObject = new();
-    private UdpClient client = client;
+    private readonly UdpClient client = client;
+    private bool disposed = false;
     private IPEndPoint endpoint = null;
 
     public event TftpCommandHandler OnCommandReceived;
@@ -24,35 +25,32 @@ internal sealed class UdpChannel(UdpClient client) : ITransferChannel
         get => endpoint;
         set
         {
-            ObjectDisposedException.ThrowIf(client == null, this);
+            ObjectDisposedException.ThrowIf(disposed, this);
             endpoint = value;
         }
     }
 
+    public void Close()
+    {
+        client.Close();
+    }
+
     public void Dispose()
     {
-        lock (lockObject)
-        {
-            if (client == null)
-            {
-                return;
-            }
-
-            client.Close();
-            client = null;
-        }
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
     public void Open()
     {
-        ObjectDisposedException.ThrowIf(client == null, this);
+        ObjectDisposedException.ThrowIf(disposed, this);
 
         client.BeginReceive(UdpReceivedCallback, null);
     }
 
     public void Send(ITftpCommand command)
     {
-        ObjectDisposedException.ThrowIf(client == null, this);
+        ObjectDisposedException.ThrowIf(disposed, this);
 
         if (endpoint == null)
         {
@@ -63,6 +61,24 @@ internal sealed class UdpChannel(UdpClient client) : ITransferChannel
         CommandSerializer.Serialize(command, stream);
         byte[] data = stream.GetBuffer();
         client.Send(data, (int)stream.Length, endpoint);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        lock (lockObject)
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                client.Dispose();
+            }
+
+            disposed = true;
+        }
     }
 
     private void RaiseOnCommand(ITftpCommand command, IPEndPoint endpoint)
